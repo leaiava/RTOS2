@@ -13,7 +13,7 @@
 #include "FreeRTOSConfig.h"
 #include "task.h"
 #include "sapi.h"
-
+#include "protocol.h"
 /*==================[definiciones y macros]==================================*/
 
 /*==================[definiciones de datos internos]=========================*/
@@ -33,13 +33,7 @@ int main(void)
    /* Inicializar la placa */
    boardConfig();
 
-   /* Inicializar la UART_USB junto con las interrupciones de Tx y Rx */
-   uartConfig(UART_USB, 115200);     
-   // Seteo un callback al evento de recepcion y habilito su interrupcion
-   uartCallbackSet(UART_USB, UART_RECEIVE, onRx, NULL);
-   // Habilito todas las interrupciones de UART_USB
-   uartInterrupt(UART_USB, true);
-   
+   protocol_init();
    xTaskCreate(
       tickTask,                     // Funcion de la tarea a ejecutar
       (const char *)"tickTask",     // Nombre de la tarea como String amigable para el usuario
@@ -63,12 +57,3 @@ void tickTask( void* pvParameters )
       vTaskDelay(1000/portTICK_RATE_MS);
    }
 }
-
-/*==================[definiciones de funciones externas]=====================*/
-void onRx( void *noUsado )
-{
-   char c = uartRxRead( UART_USB );
-   printf( "Recibimos <<%c>> por UART\r\n", c );
-}
-
-/*==================[fin del archivo]========================================*/

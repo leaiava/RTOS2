@@ -11,6 +11,7 @@
 #include "separacion_frames.h"
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
+#include "task.h"
 #include <string.h>
 
 #define	MSG_MAX_SIZE	200
@@ -31,44 +32,46 @@ sf_t* sf_crear(void)
 
 /**
  * @brief	inicializa la estructura de separacion de frame
- * param[in,out]	handler	puntero a la estructura de separacion de frames
+ * param[in]		handler	puntero a la estructura de separacion de frames
  * param[in]		uart	que UART del LPC4337 vamos a usar
  * param[in]		baudRate	El baudRate que se va a usar en la comunicación serie
  * param[in]		callbackFunc	Puntero a la función de callback, cada vez que llega un dato a la
  * 									UART se dispara esta función.
+ * @return 			true cuando fue todo correcto
+ * @return 			false cuando los punteros no cumplen con tener sector de memoria
  */
-void sf_init(sf_t* handler,uartMap_t uart, uint32_t baudRate,callBackFuncPtr_t callbackFunc )
+
+bool sf_init(sf_t* handler,uartMap_t uart, uint32_t baudRate,callBackFuncPtr_t callbackFunc )
 {
-	if (callbackFunc == NULL)
-		return;
-
-	handler->uart = uart;
-	handler->baudRate = baudRate;
-	handler->buffer = pvPortMalloc(sizeof(uint8_t)*MSG_MAX_SIZE);
-	configASSERT( handler->buffer != NULL );
-
-	uartConfig(handler->uart , handler->baudRate);
-
-	uartCallbackSet(handler->uart , UART_RECEIVE, callbackFunc, NULL);
-
-	return;
+	bool resp=false;
+	if (!((callbackFunc == NULL) || (handler == NULL))){
+		handler->uart = uart;
+		handler->baudRate = baudRate;
+		handler->buffer = pvPortMalloc(sizeof(uint8_t)*MSG_MAX_SIZE);
+		configASSERT( handler->buffer != NULL );
+		uartConfig(handler->uart , handler->baudRate);
+		uartCallbackSet(handler->uart , UART_RECEIVE, callbackFunc, NULL);
+		resp = true;
+	}
+	return resp;
 }
 
 /**
- * @brief	Activa la separacion de frames activando la interrupción que maneja el puerto serie
+ * @brief	Activa o desactiva la recepcion  de frames segun la bandera de interrupción que maneja el puerto serie
+ * @return 			true cuando fue todo correcto
+ * @return 			false cuando los punteros no cumplen con tener sector de memoria
  */
-void sf_activar(sf_t* handler)
+
+bool sf_reception_set(sf_t* handler , bool set_int)
 {
-	uartInterrupt(handler->uart, true);
+	bool resp = false;
+	if(handler != NULL){
+		uartInterrupt(handler->uart, set_int);
+		resp = true;
+	}
+	return(resp);
 }
 
-/**
- * "brief	Desactiva la separacion de frames activando la interrupción que maneja el puerto serie
- */
-void sf_desactivar(sf_t* handler)
-{
-	uartInterrupt(handler->uart, false);
-}
 
 /**
  * @brief	Recibe un byte y lo coloca en el buffer

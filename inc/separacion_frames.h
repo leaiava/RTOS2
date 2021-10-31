@@ -27,9 +27,8 @@ typedef struct
 }sf_t;
 
 sf_t* sf_crear(void);
-void sf_init(sf_t* handler,uartMap_t uart, uint32_t baudRate,callBackFuncPtr_t callbackFunc );
-void sf_activar(sf_t* handler);
-void sf_desactivar(sf_t* handler);
+bool sf_init(sf_t* handler,uartMap_t uart, uint32_t baudRate,callBackFuncPtr_t callbackFunc );
+bool sf_reception_set(sf_t* handler , bool set_int);
 void sf_recibir_byte(sf_t* handler, uint8_t byte_recibido);
 bool sf_mensaje_esta_completo(sf_t* handler);
 ptr_mensaje sf_separar_mensaje(sf_t* handler);

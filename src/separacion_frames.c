@@ -74,6 +74,9 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	handler->ptr_objeto2 = objeto_crear();
 	handler->ptr_mensaje = pvPortMalloc(sizeof(tMensaje));
 	configASSERT(handler->ptr_mensaje != NULL);
+	handler->EOM = false;
+	handler->SOM = false;
+	handler->cantidad = 0;
 
 	//	Reservo memoria para el memory pool
 	void* Pool_puntero = pvPortMalloc(POOL_SIZE * sizeof( uint8_t ));
@@ -86,24 +89,24 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 
 	BaseType_t res;
 
-	res =xTaskCreate(
-	   tarea_recibir_paquete_de_UART,			// Funcion de la tarea a ejecutar
-	   (const char *)"tarea_recibir_paquete",	// Nombre de la tarea como String amigable para el usuario
-	   configMINIMAL_STACK_SIZE*2,				// Cantidad de stack de la tarea
-	   handler,									// Parametros de tarea
-	   tskIDLE_PRIORITY+1,						// Prioridad de la tarea
-	   0										// Puntero a la tarea creada en el sistema
+	res = xTaskCreate(
+		tarea_recibir_paquete_de_UART,		   // Funcion de la tarea a ejecutar
+		(const char *)"tarea_recibir_paquete", // Nombre de la tarea como String amigable para el usuario
+		configMINIMAL_STACK_SIZE * 2,		   // Cantidad de stack de la tarea
+		handler,							   // Parametros de tarea
+		tskIDLE_PRIORITY + 1,				   // Prioridad de la tarea
+		0									   // Puntero a la tarea creada en el sistema
 	);
 
 	configASSERT(res = pdPASS);
 
-	res =xTaskCreate(
-	   tarea_enviar_paquete_por_UART,			// Funcion de la tarea a ejecutar
-	   (const char *)"tarea_enviar_paquete",	// Nombre de la tarea como String amigable para el usuario
-	   configMINIMAL_STACK_SIZE*2,				// Cantidad de stack de la tarea
-	   handler,									// Parametros de tarea
-	   tskIDLE_PRIORITY+1,						// Prioridad de la tarea
-	   0										// Puntero a la tarea creada en el sistema
+	res = xTaskCreate(
+		tarea_enviar_paquete_por_UART,		  // Funcion de la tarea a ejecutar
+		(const char *)"tarea_enviar_paquete", // Nombre de la tarea como String amigable para el usuario
+		configMINIMAL_STACK_SIZE * 2,		  // Cantidad de stack de la tarea
+		handler,							  // Parametros de tarea
+		tskIDLE_PRIORITY + 1,				  // Prioridad de la tarea
+		0									  // Puntero a la tarea creada en el sistema
 	);
 
 	configASSERT(res = pdPASS);
@@ -113,7 +116,6 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 
 	configASSERT(handler->sem_ISR != NULL);
 	configASSERT(handler->sem_bloque_liberado != NULL);
-	sf_reception_set(handler, RECEPCION_ACTIVADA );
 
 	return true;
 }
@@ -336,7 +338,6 @@ void sf_reiniciar_mensaje(sf_t* handler)
 	handler->EOM = false;
 	handler->SOM = false;
 	handler->cantidad = 0;
-	return;
 }
 
 /**
@@ -377,7 +378,7 @@ void tarea_recibir_paquete_de_UART(void* pvParameters)
 		{
 			xSemaphoreTake(handler->sem_ISR,portMAX_DELAY);	//Espero que la ISR me indique que tiene un paquete listo
 		}
-		while(sf_paquete_validar(handler));
+		while(!(sf_paquete_validar(handler)));
 
 		handler->ptr_mensaje->datos = handler->buffer + INDICE_INICIO_MENSAJE; //Cargo puntero con inicio de mensaje para la aplicación
 		handler->ptr_mensaje->cantidad = handler->cantidad - CANT_BYTE_HEADER;

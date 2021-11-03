@@ -24,7 +24,7 @@
 /*==================[definiciones de datos externos]=========================*/
 
 /*==================[declaraciones de funciones internas]====================*/
-void tarea_principal( void* pvParameters );
+void tarea_principal(void* pvParameters);
 void error_handler();
 /*==================[declaraciones de funciones externas]====================*/
 
@@ -33,35 +33,35 @@ void error_handler();
 int main(void)
 {
 	/* Inicializar la placa */
-   boardConfig();
+    boardConfig();
 
-   sf_t* ptr_sf = sf_crear();
-   configASSERT(ptr_sf != NULL);
+    sf_t* ptr_sf = sf_crear();
+    configASSERT(ptr_sf != NULL);
 
-   if (!sf_init(ptr_sf, UART_USED, BAUD_RATE) )
-	   error_handler();
+    if (!sf_init(ptr_sf, UART_USED, BAUD_RATE))
+	    error_handler();
 
-   BaseType_t res;
+    BaseType_t res;
 
-   res =xTaskCreate(
-	   tarea_principal,                   // Funcion de la tarea a ejecutar
-	   (const char *)"tarea_principal",   // Nombre de la tarea como String amigable para el usuario
-	   configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
-	   ptr_sf,                     // Parametros de tarea
-	   tskIDLE_PRIORITY+1,         // Prioridad de la tarea
-	   0                           // Puntero a la tarea creada en el sistema
-   );
+    res =xTaskCreate(
+	   tarea_principal,                 // Funcion de la tarea a ejecutar
+	   (const char *)"tarea_principal", // Nombre de la tarea como String amigable para el usuario
+	   configMINIMAL_STACK_SIZE*2, 		// Cantidad de stack de la tarea
+	   ptr_sf,                     		// Parametros de tarea
+	   tskIDLE_PRIORITY+1,         		// Prioridad de la tarea
+	   0                           		// Puntero a la tarea creada en el sistema
+    );
 
-   configASSERT(res = pdPASS);
+    configASSERT(res = pdPASS);
 
-   vTaskStartScheduler();
+    vTaskStartScheduler();
 
 
-   return 0;
+    return 0;
 }
 /*==================[definiciones de funciones internas]=====================*/
 
-void tarea_principal( void* pvParameters )
+void tarea_principal(void* pvParameters)
 {
 	sf_t* handler = (sf_t*)pvParameters;
 	while(TRUE)
@@ -69,11 +69,11 @@ void tarea_principal( void* pvParameters )
 		sf_mensaje_recibir(handler);
 		// validar mensaje recibido
 
-		// procesar mensaje
+		// Procesar mensaje
 
 #ifdef miDEBUG
-		//mando a la UART para debug
-		uartWriteString( UART_USED, handler->ptr_mensaje->datos );
+		// Mando a la UART para debug
+		uartWriteString(UART_USED, handler->ptr_mensaje->datos);
 #endif
 		sf_mensajeProcesado_enviar(handler);
 	}

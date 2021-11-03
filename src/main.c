@@ -46,10 +46,10 @@ int main(void)
     res =xTaskCreate(
 	   tarea_principal,                 // Funcion de la tarea a ejecutar
 	   (const char *)"tarea_principal", // Nombre de la tarea como String amigable para el usuario
-	   configMINIMAL_STACK_SIZE*2, 		// Cantidad de stack de la tarea
-	   ptr_sf,                     		// Parametros de tarea
-	   tskIDLE_PRIORITY+1,         		// Prioridad de la tarea
-	   0                           		// Puntero a la tarea creada en el sistema
+	   configMINIMAL_STACK_SIZE*2,		// Cantidad de stack de la tarea
+	   ptr_sf,							// Parametros de tarea
+	   tskIDLE_PRIORITY+1,				// Prioridad de la tarea
+	   0								// Puntero a la tarea creada en el sistema
     );
 
     configASSERT(res = pdPASS);

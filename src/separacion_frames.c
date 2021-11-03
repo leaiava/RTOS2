@@ -19,7 +19,7 @@
 #define EOM_BYTE					')'
 #define CANT_BYTE_HEADER			8	// 1 SOM + 4 ID + 2 CRC + 1 EOM
 #define INDICE_INICIO_MENSAJE		5	// El mensaje para la aplicación comienza en el 5to byte
-#define POOL_SIZE   			    1000
+#define POOL_SIZE					1000
 #define	RECEPCION_ACTIVADA			true
 #define RECEPCION_DESACTIVADA		false
 
@@ -56,9 +56,9 @@ sf_t* sf_crear(void)
 /**
  * @brief Inicializa la estructura de separación de frame.
  * 
- * @param[in] handler  Puntero a la estructura de separación de frames.
- * @param[in] uart 	   Que UART del LPC4337 vamos a usar.
- * @param[in] baudRate El baudRate que se va a usar en la comunicación serie.
+ * @param[in] handler	Puntero a la estructura de separación de frames.
+ * @param[in] uartQue	Que UART del LPC4337 vamos a usar.
+ * @param[in] baudRate	El baudRate que se va a usar en la comunicación serie.
  * 
  * @return true  Cuando fue todo correcto.
  * @return false Cuando los punteros no cumplen con tener sector de memoria.
@@ -87,23 +87,23 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	BaseType_t res;
 
 	res =xTaskCreate(
-	   tarea_recibir_paquete_de_UART,         // Funcion de la tarea a ejecutar
-	   (const char *)"tarea_recibir_paquete", // Nombre de la tarea como String amigable para el usuario
-	   configMINIMAL_STACK_SIZE*2, 			  // Cantidad de stack de la tarea
-	   handler,                    			  // Parametros de tarea
-	   tskIDLE_PRIORITY+1,                    // Prioridad de la tarea
-	   0                                      // Puntero a la tarea creada en el sistema
+	   tarea_recibir_paquete_de_UART,			// Funcion de la tarea a ejecutar
+	   (const char *)"tarea_recibir_paquete",	// Nombre de la tarea como String amigable para el usuario
+	   configMINIMAL_STACK_SIZE*2,				// Cantidad de stack de la tarea
+	   handler,									// Parametros de tarea
+	   tskIDLE_PRIORITY+1,						// Prioridad de la tarea
+	   0										// Puntero a la tarea creada en el sistema
 	);
 
 	configASSERT(res = pdPASS);
 
 	res =xTaskCreate(
-	   tarea_enviar_paquete_por_UART,        // Funcion de la tarea a ejecutar
-	   (const char *)"tarea_enviar_paquete", // Nombre de la tarea como String amigable para el usuario
-	   configMINIMAL_STACK_SIZE*2, 			 // Cantidad de stack de la tarea
-	   handler,                    			 // Parametros de tarea
-	   tskIDLE_PRIORITY+1,         			 // Prioridad de la tarea
-	   0                           			 // Puntero a la tarea creada en el sistema
+	   tarea_enviar_paquete_por_UART,			// Funcion de la tarea a ejecutar
+	   (const char *)"tarea_enviar_paquete",	// Nombre de la tarea como String amigable para el usuario
+	   configMINIMAL_STACK_SIZE*2,				// Cantidad de stack de la tarea
+	   handler,									// Parametros de tarea
+	   tskIDLE_PRIORITY+1,						// Prioridad de la tarea
+	   0										// Puntero a la tarea creada en el sistema
 	);
 
 	configASSERT(res = pdPASS);
@@ -140,10 +140,10 @@ bool sf_reception_set(sf_t* handler, bool set_int)
 /**
  * @brief Recibe un byte y lo coloca en el buffer.
  * 
- * @details Si todavía no se recibió el SOM se descarta el byte.
- * 			Si ya se recibió el SOM se guarda el paquete en el buffer.
- * 			Si se vuelve a recibir el SOM se reinicia el paquete.
- * 			Si el tamaño del paquete llega a MSG_MAX_SIZE se reinicia el paquete.
+ * @details	Si todavía no se recibió el SOM se descarta el byte.
+ *			Si ya se recibió el SOM se guarda el paquete en el buffer.
+ *			Si se vuelve a recibir el SOM se reinicia el paquete.
+ *			Si el tamaño del paquete llega a MSG_MAX_SIZE se reinicia el paquete.
  * 
  * @param[in] handler       Puntero a la estructura de separación de frames.
  * @param[in] byte_recibido Byte que se recibió por la UART. 
@@ -342,13 +342,13 @@ void sf_reiniciar_mensaje(sf_t* handler)
 /**
  * @brief Tarea de recepción de paquete completo por UART.
  * 
- * @details Pide un bloque del pool:
- *  		- si no hay bloque disponible, desactiva recepción por UART y queda a la espera de la señal de bloque liberado para volver a pedirlo.
- * 			- si hay bloque disponible activa recepción por UART.
+ * @details	Pide un bloque del pool:
+ *			- si no hay bloque disponible, desactiva recepción por UART y queda a la espera de la señal de bloque liberado para volver a pedirlo.
+ *			- si hay bloque disponible activa recepción por UART.
  * 			
- * 			Ya con bloque de memoria disponible queda a la espera de señal de paquete listo.
- * 			Cuando recibe dicha señal, valida el paquete y le envía mensaje (mensaje sin SOM, ni ID, ni EOM) por cola a la aplicacion.
- * 			Reincia su ciclo. 			 
+ *			Ya con bloque de memoria disponible queda a la espera de señal de paquete listo.
+ *			Cuando recibe dicha señal, valida el paquete y le envía mensaje (mensaje sin SOM, ni ID, ni EOM) por cola a la aplicacion.
+ *			Reincia su ciclo. 			 
  * 
  * @param[in] pvParameters Puntero a la estructura de separación de frames. 
  */

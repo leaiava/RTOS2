@@ -14,7 +14,7 @@
 #include "task.h"
 #include <string.h>
 
-#define	MSG_MAX_SIZE				200
+#define	MSG_MAX_SIZE				200	// R_C2_2
 #define SOM_BYTE					'('
 #define EOM_BYTE					')'
 #define CANT_BYTE_HEADER			8	// 1 SOM + 4 ID + 2 CRC + 1 EOM
@@ -160,21 +160,21 @@ bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 	bool resp = false;
 	if(handler != NULL)
 	{
-		if (byte_recibido == SOM_BYTE)
+		if (byte_recibido == SOM_BYTE)	// R_C2_3
 		{
-			handler->SOM = true;
+			handler->SOM = true;		// R_C2_4
 			handler->cantidad = 0;
 		}
 		if (handler->SOM  )
 		{
-			handler->buffer[handler->cantidad] = byte_recibido;
+			handler->buffer[handler->cantidad] = byte_recibido;	// R_C2_6
 			handler->cantidad++;
-			if (byte_recibido == EOM_BYTE)
+			if (byte_recibido == EOM_BYTE)	// R_C2_3
 			{
 				handler->EOM = true;
 				resp = true;
 			}
-			if((handler->cantidad == MSG_MAX_SIZE) && (handler->EOM == false)) // Si llegue al maximo tamaño de paquete y no recibí el EOM reinicio
+			if((handler->cantidad == MSG_MAX_SIZE) && (handler->EOM == false)) // R_C2_7 Si llegue al maximo tamaño de paquete y no recibí el EOM reinicio
 			{
 				handler->cantidad = 0;
 				handler->SOM = false;
@@ -361,12 +361,12 @@ void tarea_recibir_paquete_de_UART(void* pvParameters)
 
 	while(1)
 	{
-		do	//pido un bloque del pool, si no hay bloque disponible quedo a la espera de la señal que me avisa que se libero un bloque y vuelvo a pedir memoria
+		do	// R_C2_8 pido un bloque del pool, si no hay bloque disponible quedo a la espera de la señal que me avisa que se libero un bloque y vuelvo a pedir memoria
 		{
 			handler->buffer = (uint8_t*) QMPool_get(&Pool_memoria, 0);
 			if(handler->buffer == NULL)
 			{
-				sf_reception_set(handler, RECEPCION_DESACTIVADA);	//Si no había memoria anulo la recepcion por UART.
+				sf_reception_set(handler, RECEPCION_DESACTIVADA);	// R_C2_9 Si no había memoria anulo la recepcion por UART.
 				xSemaphoreTake(handler->sem_bloque_liberado,portMAX_DELAY); // Quedo esperando a que se libere memoria.
 			}
 			else
@@ -420,7 +420,7 @@ void sf_RX_ISR( void *parametro )
 
 	uint8_t byte_recibido = uartRxRead( handler->uart ); // Leo byte de la UART con sAPI
 
-	if (sf_recibir_byte(handler, byte_recibido))	// Proceso el byte en contexto de interrupcion, si llego EOM devuelve true, sino devuelve false
+	if (sf_recibir_byte(handler, byte_recibido))	// R_C2_5 Proceso el byte en contexto de interrupcion, si llego EOM devuelve true, sino devuelve false
 	{
 		xSemaphoreGiveFromISR(handler->sem_ISR, &xHigherPriorityTaskWoken ); // Le aviso a la tarea encargada de recibir datos que llego un paquete.
 	}

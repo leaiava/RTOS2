@@ -12,48 +12,79 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
+#include "queue.h"
 #include "sapi.h"
-#include "protocol.h"
+#include "separacion_frames.h"
 /*==================[definiciones y macros]==================================*/
-
+#define UART_USED	UART_USB
+#define BAUD_RATE	115200
+#define miDEBUG
 /*==================[definiciones de datos internos]=========================*/
 
 /*==================[definiciones de datos externos]=========================*/
 
 /*==================[declaraciones de funciones internas]====================*/
-void tickTask( void* pvParameters );
-
+void tarea_principal(void* pvParameters);
+void error_handler();
 /*==================[declaraciones de funciones externas]====================*/
-void onRx( void *noUsado );
 
 /*==================[funcion principal]======================================*/
 
 int main(void)
 {
-   /* Inicializar la placa */
-   boardConfig();
+	/* Inicializar la placa */
+    boardConfig();
 
-   protocol_init();
-   xTaskCreate(
-      tickTask,                     // Funcion de la tarea a ejecutar
-      (const char *)"tickTask",     // Nombre de la tarea como String amigable para el usuario
-      configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
-      0,                          // Parametros de tarea
-      tskIDLE_PRIORITY+1,         // Prioridad de la tarea
-      0                           // Puntero a la tarea creada en el sistema
-   );
+    sf_t* ptr_sf = sf_crear();
+    configASSERT(ptr_sf != NULL);
 
-   vTaskStartScheduler();
+    if (!sf_init(ptr_sf, UART_USED, BAUD_RATE))
+	    error_handler();
 
-   return 0;
+    BaseType_t res;
+
+	res = xTaskCreate(
+		tarea_principal,				 // Funcion de la tarea a ejecutar
+		(const char *)"tarea_principal", // Nombre de la tarea como String amigable para el usuario
+		configMINIMAL_STACK_SIZE * 2,	 // Cantidad de stack de la tarea
+		ptr_sf,							 // Parametros de tarea
+		tskIDLE_PRIORITY + 1,			 // Prioridad de la tarea
+		0								 // Puntero a la tarea creada en el sistema
+	);
+
+	configASSERT(res = pdPASS);
+
+    vTaskStartScheduler();
+
+
+    return 0;
 }
 /*==================[definiciones de funciones internas]=====================*/
 
-void tickTask( void* pvParameters )
+void tarea_principal(void* pvParameters)
 {
-   while(TRUE) {
-      // Una tarea muy bloqueante para demostrar que la interrupcion funcina
-      gpioToggle(LEDB);
-      vTaskDelay(1000/portTICK_RATE_MS);
-   }
+	sf_t* handler = (sf_t*)pvParameters;
+	while(TRUE)
+	{
+		sf_mensaje_recibir(handler);
+		// validar mensaje recibido
+
+		// Procesar mensaje
+
+#ifdef miDEBUG
+		// Mando a la UART para debug
+		uartWriteString(UART_USED, handler->ptr_mensaje->datos);
+#endif
+		sf_mensajeProcesado_enviar(handler);
+	}
+}
+
+
+
+/**
+ * @brief	Manejo de errores
+ */
+void error_handler()
+{
+
 }

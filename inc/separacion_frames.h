@@ -13,27 +13,28 @@
 
 #include "sapi.h"
 #include "crc8.h"
-
-typedef uint32_t* ptr_mensaje;
+#include "objeto.h"
+#include "qmpool.h"
 
 typedef struct
 {
-	uartMap_t	uart;		///< Nombre de la UART del LPC4337 a utilizar
-	uint32_t 	baudRate;	///< BaudRate seleccionado para la comunicacion serie
-	uint32_t*	buffer;		///< buffer para la recepción de bytes
-	uint32_t	cantidad;	///< cantidad de bytes recibidos
-	bool		SOM;		///< flag para indicar si llego el SOM
-	bool		EOM;		///< flag para indicar si llego el EOM
+	uartMap_t uart;     			       ///< Nombre de la UART del LPC4337 a utilizar.
+	uint32_t  baudRate; 		   	       ///< BaudRate seleccionado para la comunicacion serie.
+	uint8_t*  buffer;                      ///< Buffer para la recepción de bytes.
+	uint32_t  cantidad;                    ///< Cantidad de bytes recibidos.
+	bool      SOM;      			       ///< Flag para indicar si llego el SOM.
+	bool      EOM;       			       ///< Flag para indicar si llego el EOM.
+	SemaphoreHandle_t sem_ISR;  		   ///< Semaforo que la ISR usa para indicarle a la tarea que tiene un paquete listo.
+	SemaphoreHandle_t sem_bloque_liberado; ///< Semaforo que le indica al driver que se libero un bloque de memoria.
+	tObjeto*  ptr_objeto1;  		       ///< Puntero al objeto usado para enviar el mensaje del driver a la aplicacion.
+	tObjeto*  ptr_objeto2;                 ///< Puntero al objeto usado para enviar el mensaje de la aplicacion al driver.
+	tMensaje* ptr_mensaje;                 ///< Puntero al mensaje a enviarse a través del objeto.
 }sf_t;
 
 sf_t* sf_crear(void);
-bool sf_init(sf_t* handler,uartMap_t uart, uint32_t baudRate,callBackFuncPtr_t callbackFunc );
-bool sf_reception_set(sf_t* handler , bool set_int);
-void sf_recibir_byte(sf_t* handler, uint8_t byte_recibido);
-bool sf_mensaje_esta_completo(sf_t* handler);
-ptr_mensaje sf_separar_mensaje(sf_t* handler);
-bool sf_validar_crc8(sf_t* handler);
-static bool sf_byte_valido(uint8_t byte);
-static uint8_t sf_atoi(uint8_t byte);
+bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate);
+
+void sf_mensaje_recibir(sf_t* handler);
+void sf_mensajeProcesado_enviar(sf_t* handler);
 
 #endif /* separacion_frames_H_ */

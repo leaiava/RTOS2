@@ -19,6 +19,8 @@
 #define EOM_BYTE					')'
 #define CANT_BYTE_HEADER			8	// 1 SOM + 4 ID + 2 CRC + 1 EOM
 #define INDICE_INICIO_MENSAJE		5	// El mensaje para la aplicación comienza en el 5to byte
+#define INDICE_INICIO_ID			1
+#define CANT_BYTE_FUERA_CRC			4
 #define POOL_SIZE					1000
 #define	RECEPCION_ACTIVADA			true
 #define RECEPCION_DESACTIVADA		false
@@ -199,12 +201,12 @@ bool sf_validar_crc8(sf_t* handler)
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 	if (sf_byte_valido(handler->buffer[handler->cantidad - 3]))
-		CRC_paquete += sf_atoi(handler->buffer[handler->cantidad - 3]);
+		CRC_paquete += (sf_atoi(handler->buffer[handler->cantidad - 3])) << 4;
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 
 	/* calculo el CRC del paquete*/
-	crc = crc8_calc(0, handler->buffer, handler->cantidad);
+	crc = crc8_calc(0, handler->buffer + INDICE_INICIO_ID, handler->cantidad - CANT_BYTE_FUERA_CRC);
 
 	if (crc == CRC_paquete)
 		return true;	// Si el CRC es correcto devuelvo true

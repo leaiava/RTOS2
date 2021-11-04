@@ -17,7 +17,7 @@
 
 /*==================[definiciones de datos externos]=========================*/
 
-//  ES INVALIDO QUE LA IMNPLEMNTACIO DEL OBJETO CONOZCA ACERCA DE LAS INSTANCIAS.
+//  ES INVALIDO QUE LA IMPLEMENTACIÓN DEL OBJETO CONOZCA ACERCA DE LAS INSTANCIAS.
 
 /*==================[declaraciones de funciones internas]====================*/
 
@@ -29,34 +29,34 @@ tObjeto* objeto_crear()
 {
     tObjeto* rv ;
 
-    rv = pvPortMalloc( sizeof( tObjeto ) );
+    rv = pvPortMalloc(sizeof(tObjeto));
 
-    configASSERT( rv != NULL );
+    configASSERT(rv != NULL);
 
-    rv->cola  = xQueueCreate( N_QUEUE, sizeof( tMensaje ) );
+    rv->cola = xQueueCreate(N_QUEUE, sizeof(tMensaje));
 
-    configASSERT( rv->cola != NULL );
+    configASSERT(rv->cola != NULL);
 
     return rv;
 }
 
-void objeto_post( tObjeto* objeto, tMensaje mensaje )
+void objeto_post(tObjeto* objeto, tMensaje mensaje)
 {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	xQueueSendFromISR( objeto->cola, &mensaje, xHigherPriorityTaskWoken );
+	xQueueSendFromISR(objeto->cola, &mensaje, xHigherPriorityTaskWoken);
 }
 
-void objeto_get( tObjeto* objeto,tMensaje* mensaje )
+void objeto_get(tObjeto* objeto, tMensaje* mensaje)
 {
-    xQueueReceive( objeto->cola, mensaje,portMAX_DELAY );
+    xQueueReceive(objeto->cola, mensaje, portMAX_DELAY);
 }
 
-void objeto_borrar( tObjeto* objeto )
+void objeto_borrar(tObjeto* objeto)
 {
-    /* primero se destryen los objetos "hijos"*/
-    vQueueDelete( objeto->cola );
+    /* Primero se destruyen los objetos "hijos"*/
+    vQueueDelete(objeto->cola);
 
-    /* al final el obj */
-    vPortFree( objeto );
+    /* Al final el obj */
+    vPortFree(objeto);
 }
 

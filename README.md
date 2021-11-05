@@ -1,4 +1,4 @@
-# RTOS2
+# RTOS2 v1.0
 Repositorio para el Trabajo Práctico de la asignatura Sistemas Operativos en Tiempo Real 2 de la Carrera de Especialización en Sistemas Embebidos.
 
 # Miembros del grupo 3
@@ -37,7 +37,7 @@ Tarea_enviar_paquete_por_UART: Recibe el mensaje procesado, lo envía por la UAR
 ### Requerimientos Generales:
 - [x] R_TP_1
 - [x] R_TP_2
-- [ ] R_TP_3
+- [x] R_TP_3
 - [x] R_TP_4
 
 ### Requerimientos Capa Separación de frames (C2):

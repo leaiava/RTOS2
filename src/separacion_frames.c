@@ -349,9 +349,9 @@ void sf_reiniciar_mensaje(sf_t* handler)
  *			- si no hay bloque disponible, desactiva recepción por UART y queda a la espera de la señal de bloque liberado para volver a pedirlo.
  *			- si hay bloque disponible activa recepción por UART.
  * 			
- *			Ya con bloque de memoria disponible queda a la espera de señal de paquete listo.
- *			Cuando recibe dicha señal, valida el paquete y le envía mensaje (mensaje sin SOM, ni ID, ni EOM) por cola a la aplicacion.
- *			Reincia su ciclo. 			 
+ *			Ya con bloque de memoria disponible queda a la espera de señal de mensaje listo para enviar.
+ *			Cuando recibe dicha señal, envía mensaje (sin SOM, ni ID, ni EOM) por cola a la aplicacion.
+ *			Reincia su ciclo.
  * 
  * @param[in] pvParameters Puntero a la estructura de separación de frames. 
  */
@@ -376,14 +376,7 @@ void tarea_recibir_paquete_de_UART(void* pvParameters)
 		}
 		while (handler->buffer == NULL);
 
-		do
-		{
-			xSemaphoreTake(handler->sem_ISR,portMAX_DELAY);	//Espero que la ISR me indique que tiene un paquete listo
-		}
-		while(!(sf_paquete_validar(handler)));
-
-		handler->ptr_mensaje->datos = handler->buffer + INDICE_INICIO_MENSAJE; //Cargo puntero con inicio de mensaje para la aplicación
-		handler->ptr_mensaje->cantidad = handler->cantidad - CANT_BYTE_HEADER;
+		xSemaphoreTake(handler->sem_ISR, portMAX_DELAY);	//Espero que la RX_ISR me indique que tiene un mensaje listo para enviar
 		sf_mensaje_enviar(handler);
 		sf_reiniciar_mensaje(handler);
 	}
@@ -422,7 +415,12 @@ void sf_RX_ISR( void *parametro )
 
 	if (sf_recibir_byte(handler, byte_recibido))	// R_C2_5 Proceso el byte en contexto de interrupcion, si llego EOM devuelve true, sino devuelve false
 	{
-		xSemaphoreGiveFromISR(handler->sem_ISR, &xHigherPriorityTaskWoken ); // Le aviso a la tarea encargada de recibir datos que llego un paquete.
+		if (sf_paquete_validar(handler))
+		{
+			handler->ptr_mensaje->datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
+			handler->ptr_mensaje->cantidad = handler->cantidad - CANT_BYTE_HEADER;
+			xSemaphoreGiveFromISR(handler->sem_ISR, &xHigherPriorityTaskWoken);    // Envio señal de mensaje listo para enviar
+		}
 	}
 }
 

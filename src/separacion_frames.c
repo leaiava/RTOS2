@@ -13,33 +13,23 @@
 #include "FreeRTOSConfig.h"
 #include "task.h"
 #include <string.h>
+#include "sepa_frame_def.h"
 
-#define	MSG_MAX_SIZE				200	// R_C2_2
-#define SOM_BYTE					'('
-#define EOM_BYTE					')'
-#define CANT_BYTE_HEADER			8	// 1 SOM + 4 ID + 2 CRC + 1 EOM
-#define INDICE_INICIO_MENSAJE		5	// El mensaje para la aplicación comienza en el 5to byte
-#define INDICE_INICIO_ID			1
-#define CANT_BYTE_FUERA_CRC			4
-#define POOL_SIZE					1000
-#define	RECEPCION_ACTIVADA			true
-#define RECEPCION_DESACTIVADA		false
-
-bool sf_reception_set(sf_t* handler, bool set_int);
-bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido);
-bool sf_paquete_validar(sf_t* handler);
-bool sf_validar_crc8(sf_t* handler);
-bool sf_byte_valido(uint8_t byte);
-bool sf_bloque_de_memoria_nuevo(sf_t* handler);
-uint8_t sf_atoi(uint8_t byte);
-void sf_bloque_de_memoria_liberar(sf_t* handler);
-void sf_reiniciar_mensaje(sf_t* handler);
-void sf_mensaje_enviar( sf_t* handler );
-void sf_mensajeProcesado_recibir( sf_t* handler );
-void tarea_recibir_paquete_de_UART(void* pvParameters);
-void tarea_enviar_paquete_por_UART(void* pvParameters);
-void sf_RX_ISR(void* parametro);
-void sf_TX_ISR(void* parametro);
+static bool sf_reception_set(sf_t* handler, bool set_int);
+static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido);
+static bool sf_paquete_validar(sf_t* handler);
+static bool sf_validar_crc8(sf_t* handler);
+static bool sf_byte_valido(uint8_t byte);
+static bool sf_bloque_de_memoria_nuevo(sf_t* handler);
+static uint8_t sf_atoi(uint8_t byte);
+static void sf_bloque_de_memoria_liberar(tMensaje* ptr_mensaje);
+static void sf_reiniciar_mensaje(sf_t* handler);
+static void sf_mensaje_enviar( sf_t* handler );
+static void sf_mensajeProcesado_recibir( sf_t* handler );
+static void tarea_recibir_paquete_de_UART(void* pvParameters);
+static void tarea_enviar_paquete_por_UART(void* pvParameters);
+static void sf_RX_ISR(void* parametro);
+static void sf_TX_ISR(void* parametro);
 
 /**
  * @brief Asigna memoria para una estructura de separcion de frames y devuelve puntero a ella.
@@ -129,7 +119,7 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
  * @return true  Cuando fue todo correcto. 
  * @return false Cuando los punteros no cumplen con tener sector de memoria.
  */
-bool sf_reception_set(sf_t* handler, bool set_int)
+static bool sf_reception_set(sf_t* handler, bool set_int)
 {
 	bool resp = false;
 	if(handler != NULL){
@@ -153,7 +143,7 @@ bool sf_reception_set(sf_t* handler, bool set_int)
  * @return true  Si llego el EOM. 
  * @return false Si todavía no llego el EOM o puntero es NULL.
  */
-bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
+static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 {
 	bool resp = false;
 	if(handler != NULL)
@@ -190,16 +180,16 @@ return resp;
  * @return true  Si el CRC es correcto.
  * @return false Si el CRC es incorrecto.
  */
-bool sf_validar_crc8(sf_t* handler)
+static bool sf_validar_crc8(sf_t* handler)
 {
 	uint8_t CRC_paquete,crc;
 	/* convierto el CRC de ASCII a entero */
-	if (sf_byte_valido(handler->buffer[handler->cantidad - 2]))
-		CRC_paquete = sf_atoi(handler->buffer[handler->cantidad - 2]);
+	if (sf_byte_valido(handler->buffer[handler->cantidad - POS_CRC_H]))
+		CRC_paquete = sf_atoi(handler->buffer[handler->cantidad - POS_CRC_H]);
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
-	if (sf_byte_valido(handler->buffer[handler->cantidad - 3]))
-		CRC_paquete += (sf_atoi(handler->buffer[handler->cantidad - 3])) << 4;
+	if (sf_byte_valido(handler->buffer[handler->cantidad - POS_CRC_L]))
+		CRC_paquete += (sf_atoi(handler->buffer[handler->cantidad - POS_CRC_L])) << S_LEFT_4b;
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 
@@ -219,9 +209,9 @@ bool sf_validar_crc8(sf_t* handler)
  * @return true  Si el byte es correcto.
  * @return false Si el byte es incorrecto.
  */
-bool sf_byte_valido(uint8_t byte)
+static bool sf_byte_valido(uint8_t byte)
 {
-	if (( (byte >= '0')&&(byte <= '9') )||( (byte >= 'A' )&&(byte<='F') ))
+	if (( (byte >= ASCII_0)&&(byte <= ASCII_9) )||( (byte >= ASCII_A )&&(byte<= ASCII_F) ))
 		return true;
 	return false;
 }
@@ -235,11 +225,11 @@ bool sf_byte_valido(uint8_t byte)
  * 
  * @attention Requiere que el byte se encuentre previamente validado con función sf_byte_valido.
  */
-uint8_t sf_atoi(uint8_t byte)
+static uint8_t sf_atoi(uint8_t byte)
 {
-	if((byte >= '0')&&(byte <= '9'))
-		return (byte - 48);
-	return (byte - 55);			// Si no esta entre 0 y 9 se que esta entre A y F
+	if((byte >= ASCII_0)&&(byte <= ASCII_9))
+		return (byte - ASCII_0);
+	return (byte - ASCII_TO_DEC);			// Si no esta entre 0 y 9 se que esta entre A y F
 }
 
 /**
@@ -250,7 +240,7 @@ uint8_t sf_atoi(uint8_t byte)
  * @return true  Si había memoria disponible. 
  * @return false Si no hay memoria disponible.
  */
-bool sf_bloque_de_memoria_nuevo(sf_t* handler)
+static bool sf_bloque_de_memoria_nuevo(sf_t* handler)
 {
 	handler->buffer = (uint8_t*) QMPool_get(&(handler->pool_memoria), 0); // Pido un bloque del pool
 	if(handler->buffer == NULL)
@@ -266,7 +256,7 @@ bool sf_bloque_de_memoria_nuevo(sf_t* handler)
  * @return true  ID y CRC del paquete válidos.
  * @return false ID y/o CRC del paquete inválidos.
  */
-bool sf_paquete_validar(sf_t* handler)
+static bool sf_paquete_validar(sf_t* handler)
 {
 	bool resp = false;
 	//falta validar el ID
@@ -293,7 +283,7 @@ void sf_mensaje_recibir(sf_t* handler)
  * 
  * @param[in] handler Puntero a la estructura de separación de frames.
  */
-void sf_mensaje_enviar(sf_t* handler)
+static void sf_mensaje_enviar(sf_t* handler)
 {
 	objeto_post(handler->ptr_objeto1, *handler->ptr_mensaje);
 }
@@ -303,7 +293,7 @@ void sf_mensaje_enviar(sf_t* handler)
  * 
  * @param[in] handler Puntero a la estructura de separación de frames.
  */
-void sf_mensajeProcesado_recibir(sf_t* handler)
+static void sf_mensajeProcesado_recibir(sf_t* handler)
 {
 	objeto_get(handler->ptr_objeto2, handler->ptr_mensaje);
 }
@@ -333,7 +323,7 @@ void sf_bloque_de_memoria_liberar(sf_t* handler)
  * 
  * @param[in] handler Puntero a la estructura de separación de frames.
  */
-void sf_reiniciar_mensaje(sf_t* handler)
+static void sf_reiniciar_mensaje(sf_t* handler)
 {
 	handler->EOM = false;
 	handler->SOM = false;
@@ -353,7 +343,7 @@ void sf_reiniciar_mensaje(sf_t* handler)
  * 
  * @param[in] pvParameters Puntero a la estructura de separación de frames. 
  */
-void tarea_recibir_paquete_de_UART(void* pvParameters)
+static void tarea_recibir_paquete_de_UART(void* pvParameters)
 {
 	sf_t* handler = (sf_t*) pvParameters;
 
@@ -385,7 +375,7 @@ void tarea_recibir_paquete_de_UART(void* pvParameters)
  * 
  * @param[in] pvParameters Puntero a la estructura de separación de frames. 
  */
-void tarea_enviar_paquete_por_UART(void* pvParameters)
+static void tarea_enviar_paquete_por_UART(void* pvParameters)
 {
 	sf_t* handler = (sf_t*) pvParameters;
 	while(1)
@@ -404,7 +394,7 @@ void tarea_enviar_paquete_por_UART(void* pvParameters)
  * @param[in] parametro Puntero a la estructura de separación de frames. 
  * 
  */
-void sf_RX_ISR( void *parametro )
+static void sf_RX_ISR( void *parametro )
 {
 	sf_t* handler = (sf_t*)parametro;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -416,7 +406,7 @@ void sf_RX_ISR( void *parametro )
 		if (sf_paquete_validar(handler))
 		{
 			handler->ptr_mensaje->datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
-			handler->ptr_mensaje->cantidad = handler->cantidad - CANT_BYTE_HEADER;
+			handler->ptr_mensaje->cantidad = handler->cantidad - LEN_HEADER;
 			xSemaphoreGiveFromISR(handler->sem_ISR, &xHigherPriorityTaskWoken);    // Envio señal de mensaje listo para enviar
 		}
 	}
@@ -427,7 +417,7 @@ void sf_RX_ISR( void *parametro )
  * 
  * @param[in] parametro Puntero a la estructura de separación de frames. 
  */
-void sf_TX_ISR( void *parametro )
+static void sf_TX_ISR( void *parametro )
 {
 	sf_t* handler = (sf_t*) parametro;
 

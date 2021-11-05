@@ -21,15 +21,15 @@ static bool sf_paquete_validar(sf_t* handler);
 static bool sf_validar_crc8(sf_t* handler);
 static bool sf_byte_valido(uint8_t byte);
 static bool sf_bloque_de_memoria_nuevo(sf_t* handler);
-static uint8_t sf_atoi(uint8_t byte);
+static uint8_t sf_decodificar_ascii(uint8_t byte);
 static void sf_bloque_de_memoria_liberar(sf_t* handler);
 static void sf_reiniciar_mensaje(sf_t* handler);
 static void sf_mensaje_enviar( sf_t* handler );
-static void sf_mensajeProcesado_recibir( sf_t* handler );
-static void tarea_recibir_paquete_de_UART(void* pvParameters);
-static void tarea_enviar_paquete_por_UART(void* pvParameters);
-static void sf_RX_ISR(void* parametro);
-static void sf_TX_ISR(void* parametro);
+static void sf_mensaje_procesado_recibir( sf_t* handler );
+static void tarea_recibir_paquete_uart(void* pvParameters);
+static void tarea_enviar_paquete_uart(void* pvParameters);
+static void sf_rx_isr(void* parametro);
+static void sf_tx_isr(void* parametro);
 
 /**
  * @brief Asigna memoria para una estructura de separcion de frames y devuelve puntero a ella.
@@ -75,28 +75,28 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	QMPool_init(&(handler->pool_memoria), handler->prt_pool, POOL_SIZE * sizeof( uint8_t ), MSG_MAX_SIZE);  //Tamaño del segmento de memoria reservado
 
 	uartConfig(handler->uart, handler->baudRate);
-	uartCallbackSet(handler->uart, UART_RECEIVE, sf_RX_ISR, handler);
+	uartCallbackSet(handler->uart, UART_RECEIVE, sf_rx_isr, handler);
 
 	BaseType_t res;
 
 	res = xTaskCreate(
-		tarea_recibir_paquete_de_UART,		   // Funcion de la tarea a ejecutar
-		(const char *)"tarea_recibir_paquete", // Nombre de la tarea como String amigable para el usuario
-		configMINIMAL_STACK_SIZE * 2,		   // Cantidad de stack de la tarea
-		handler,							   // Parametros de tarea
-		tskIDLE_PRIORITY + 1,				   // Prioridad de la tarea
-		0									   // Puntero a la tarea creada en el sistema
+		tarea_recibir_paquete_uart,          // Funcion de la tarea a ejecutar
+		(const char *)"tarea_recibir_paquete",  // Nombre de la tarea como String amigable para el usuario
+		configMINIMAL_STACK_SIZE * 2,           // Cantidad de stack de la tarea
+		handler,                                // Parametros de tarea
+		tskIDLE_PRIORITY + 1,                   // Prioridad de la tarea
+		0                                       // Puntero a la tarea creada en el sistema
 	);
 
 	configASSERT(res = pdPASS);
 
 	res = xTaskCreate(
-		tarea_enviar_paquete_por_UART,		  // Funcion de la tarea a ejecutar
-		(const char *)"tarea_enviar_paquete", // Nombre de la tarea como String amigable para el usuario
-		configMINIMAL_STACK_SIZE * 2,		  // Cantidad de stack de la tarea
-		handler,							  // Parametros de tarea
-		tskIDLE_PRIORITY + 1,				  // Prioridad de la tarea
-		0									  // Puntero a la tarea creada en el sistema
+		tarea_enviar_paquete_uart,          // Funcion de la tarea a ejecutar
+		(const char *)"tarea_enviar_paquete",   // Nombre de la tarea como String amigable para el usuario
+		configMINIMAL_STACK_SIZE * 2,           // Cantidad de stack de la tarea
+		handler,                                // Parametros de tarea
+		tskIDLE_PRIORITY + 1,                   // Prioridad de la tarea
+		0                                       // Puntero a la tarea creada en el sistema
 	);
 
 	configASSERT(res = pdPASS);
@@ -132,15 +132,15 @@ static bool sf_reception_set(sf_t* handler, bool set_int)
 /**
  * @brief Recibe un byte y lo coloca en el buffer.
  * 
- * @details	Si todavía no se recibió el SOM se descarta el byte.
- *			Si ya se recibió el SOM se guarda el paquete en el buffer.
- *			Si se vuelve a recibir el SOM se reinicia el paquete.
- *			Si el tamaño del paquete llega a MSG_MAX_SIZE se reinicia el paquete.
+ * @details Si todavía no se recibió el SOM se descarta el byte.
+ *          Si ya se recibió el SOM se guarda el paquete en el buffer.
+ *          Si se vuelve a recibir el SOM se reinicia el paquete.
+ *          Si el tamaño del paquete llega a MSG_MAX_SIZE se reinicia el paquete.
  * 
  * @param[in] handler       Puntero a la estructura de separación de frames.
  * @param[in] byte_recibido Byte que se recibió por la UART. 
  * 
- * @return true  Si llego el EOM. 
+ * @return true  Si llegó el EOM. 
  * @return false Si todavía no llego el EOM o puntero es NULL.
  */
 static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
@@ -185,11 +185,11 @@ static bool sf_validar_crc8(sf_t* handler)
 	uint8_t CRC_paquete,crc;
 	/* convierto el CRC de ASCII a entero */
 	if (sf_byte_valido(handler->buffer[handler->cantidad - POS_CRC_H]))
-		CRC_paquete = sf_atoi(handler->buffer[handler->cantidad - POS_CRC_H]);
+		CRC_paquete = sf_decodificar_ascii(handler->buffer[handler->cantidad - POS_CRC_H]);
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 	if (sf_byte_valido(handler->buffer[handler->cantidad - POS_CRC_L]))
-		CRC_paquete += (sf_atoi(handler->buffer[handler->cantidad - POS_CRC_L])) << S_LEFT_4b;
+		CRC_paquete += (sf_decodificar_ascii(handler->buffer[handler->cantidad - POS_CRC_L])) << S_LEFT_4b;
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 
@@ -217,19 +217,19 @@ static bool sf_byte_valido(uint8_t byte)
 }
 
 /**
- * @brief Convierte un byte ASCII en entero.
+ * @brief Decodifica un byte en ASCII.
  * 
- * @param[in] byte Byte a convertir.
+ * @param[in] byte Byte a decodificar.
  * 
- * @return uint8_t Byte convertido a entero.
+ * @return uint8_t Byte decodificado.
  * 
- * @attention Requiere que el byte se encuentre previamente validado con función sf_byte_valido.
+ * @attention Requiere que el byte se encuentre previamente validado con la función sf_byte_valido.
  */
-static uint8_t sf_atoi(uint8_t byte)
+static uint8_t sf_decodificar_ascii(uint8_t byte)
 {
 	if((byte >= ASCII_0)&&(byte <= ASCII_9))
 		return (byte - ASCII_0);
-	return (byte - ASCII_TO_DEC);			// Si no esta entre 0 y 9 se que esta entre A y F
+	return (byte - ASCII_TO_NUM);			// Si no está entre 0 y 9, está entre A y F
 }
 
 /**
@@ -293,7 +293,7 @@ static void sf_mensaje_enviar(sf_t* handler)
  * 
  * @param[in] handler Puntero a la estructura de separación de frames.
  */
-static void sf_mensajeProcesado_recibir(sf_t* handler)
+static void sf_mensaje_procesado_recibir(sf_t* handler)
 {
 	objeto_get(handler->ptr_objeto2, handler->ptr_mensaje);
 }
@@ -303,7 +303,7 @@ static void sf_mensajeProcesado_recibir(sf_t* handler)
  * 
  * @param[in] handler Puntero a la estructura de separación de frames.
  */
-void sf_mensajeProcesado_enviar( sf_t* handler )
+void sf_mensaje_procesado_enviar( sf_t* handler )
 {
 	objeto_post(handler->ptr_objeto2, *handler->ptr_mensaje);
 }
@@ -333,17 +333,17 @@ static void sf_reiniciar_mensaje(sf_t* handler)
 /**
  * @brief Tarea de recepción de paquete completo por UART.
  * 
- * @details	Pide un bloque del pool:
- *			- si no hay bloque disponible, desactiva recepción por UART y queda a la espera de la señal de bloque liberado para volver a pedirlo.
- *			- si hay bloque disponible activa recepción por UART.
- * 			
- *			Ya con bloque de memoria disponible queda a la espera de señal de mensaje listo para enviar.
- *			Cuando recibe dicha señal, envía mensaje (sin SOM, ni ID, ni EOM) por cola a la aplicacion.
- *			Reincia su ciclo.
+ * @details Pide un bloque del pool:
+ *          - si no hay bloque disponible, desactiva recepción por UART y queda a la espera de la señal de bloque liberado para volver a pedirlo.
+ *          - si hay bloque disponible activa recepción por UART.
+ *
+ *          Ya con bloque de memoria disponible queda a la espera de señal de mensaje listo para enviar.
+ *          Cuando recibe dicha señal, envía mensaje (sin SOM, ni ID, ni EOM) por cola a la aplicació	n.
+ *          Reincia su ciclo.
  * 
  * @param[in] pvParameters Puntero a la estructura de separación de frames. 
  */
-static void tarea_recibir_paquete_de_UART(void* pvParameters)
+static void tarea_recibir_paquete_uart(void* pvParameters)
 {
 	sf_t* handler = (sf_t*) pvParameters;
 
@@ -375,12 +375,12 @@ static void tarea_recibir_paquete_de_UART(void* pvParameters)
  * 
  * @param[in] pvParameters Puntero a la estructura de separación de frames. 
  */
-static void tarea_enviar_paquete_por_UART(void* pvParameters)
+static void tarea_enviar_paquete_uart(void* pvParameters)
 {
 	sf_t* handler = (sf_t*) pvParameters;
 	while(1)
 	{
-	sf_mensajeProcesado_recibir(handler);
+	sf_mensaje_procesado_recibir(handler);
 	//ARMAR NUEVO PAQUETE AQUÍ
 	//ENVIAR PORT UART PAQUETE PROCESADO
 	sf_bloque_de_memoria_liberar(handler);
@@ -394,7 +394,7 @@ static void tarea_enviar_paquete_por_UART(void* pvParameters)
  * @param[in] parametro Puntero a la estructura de separación de frames. 
  * 
  */
-static void sf_RX_ISR( void *parametro )
+static void sf_rx_isr( void *parametro )
 {
 	sf_t* handler = (sf_t*)parametro;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -417,7 +417,7 @@ static void sf_RX_ISR( void *parametro )
  * 
  * @param[in] parametro Puntero a la estructura de separación de frames. 
  */
-static void sf_TX_ISR( void *parametro )
+static void sf_tx_isr( void *parametro )
 {
 	sf_t* handler = (sf_t*) parametro;
 

@@ -22,7 +22,7 @@ static bool sf_validar_crc8(sf_t* handler);
 static bool sf_byte_valido(uint8_t byte);
 static bool sf_bloque_de_memoria_nuevo(sf_t* handler);
 static uint8_t sf_atoi(uint8_t byte);
-static void sf_bloque_de_memoria_liberar(tMensaje* ptr_mensaje);
+static void sf_bloque_de_memoria_liberar(sf_t* handler);
 static void sf_reiniciar_mensaje(sf_t* handler);
 static void sf_mensaje_enviar( sf_t* handler );
 static void sf_mensajeProcesado_recibir( sf_t* handler );

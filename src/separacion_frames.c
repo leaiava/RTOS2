@@ -32,7 +32,7 @@ bool sf_validar_crc8(sf_t* handler);
 bool sf_byte_valido(uint8_t byte);
 bool sf_bloque_de_memoria_nuevo(sf_t* handler);
 uint8_t sf_atoi(uint8_t byte);
-void sf_bloque_de_memoria_liberar(tMensaje* ptr_mensaje);
+void sf_bloque_de_memoria_liberar(sf_t* handler);
 void sf_reiniciar_mensaje(sf_t* handler);
 void sf_mensaje_enviar( sf_t* handler );
 void sf_mensajeProcesado_recibir( sf_t* handler );
@@ -40,8 +40,6 @@ void tarea_recibir_paquete_de_UART(void* pvParameters);
 void tarea_enviar_paquete_por_UART(void* pvParameters);
 void sf_RX_ISR(void* parametro);
 void sf_TX_ISR(void* parametro);
-
-QMPool Pool_memoria; // Memory pool (contienen la informacion que necesita la biblioteca qmpool.h)
 
 /**
  * @brief Asigna memoria para una estructura de separcion de frames y devuelve puntero a ella.
@@ -81,10 +79,10 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	handler->cantidad = 0;
 
 	//	Reservo memoria para el memory pool
-	void* Pool_puntero = pvPortMalloc(POOL_SIZE * sizeof( uint8_t ));
-	configASSERT(Pool_puntero != NULL);
+	handler->prt_pool = pvPortMalloc(POOL_SIZE * sizeof( uint8_t ));
+	configASSERT(handler->prt_pool != NULL);
 	//	Creo el pool de memoria
-	QMPool_init(&Pool_memoria, Pool_puntero, POOL_SIZE * sizeof( uint8_t ), MSG_MAX_SIZE);  //Tamaño del segmento de memoria reservado
+	QMPool_init(&(handler->pool_memoria), handler->prt_pool, POOL_SIZE * sizeof( uint8_t ), MSG_MAX_SIZE);  //Tamaño del segmento de memoria reservado
 
 	uartConfig(handler->uart, handler->baudRate);
 	uartCallbackSet(handler->uart, UART_RECEIVE, sf_RX_ISR, handler);
@@ -254,7 +252,7 @@ uint8_t sf_atoi(uint8_t byte)
  */
 bool sf_bloque_de_memoria_nuevo(sf_t* handler)
 {
-	handler->buffer = (uint8_t*) QMPool_get(&Pool_memoria, 0); // Pido un bloque del pool
+	handler->buffer = (uint8_t*) QMPool_get(&(handler->pool_memoria), 0); // Pido un bloque del pool
 	if(handler->buffer == NULL)
 		return false;
 	return true;
@@ -325,9 +323,9 @@ void sf_mensajeProcesado_enviar( sf_t* handler )
  * 
  * @param[in] ptr_mensaje Puntero al mensaje. 
  */
-void sf_bloque_de_memoria_liberar(tMensaje* ptr_mensaje)
+void sf_bloque_de_memoria_liberar(sf_t* handler)
 {
-	QMPool_put(&Pool_memoria, ptr_mensaje-INDICE_INICIO_MENSAJE); // El inicio del bloque tiene como offset el INDICE_INICIO_MENSAJE
+	QMPool_put(&(handler->pool_memoria), handler->ptr_mensaje-INDICE_INICIO_MENSAJE); // El inicio del bloque tiene como offset el INDICE_INICIO_MENSAJE
 }
 
 /**
@@ -349,9 +347,9 @@ void sf_reiniciar_mensaje(sf_t* handler)
  *			- si no hay bloque disponible, desactiva recepción por UART y queda a la espera de la señal de bloque liberado para volver a pedirlo.
  *			- si hay bloque disponible activa recepción por UART.
  * 			
- *			Ya con bloque de memoria disponible queda a la espera de señal de paquete listo.
- *			Cuando recibe dicha señal, valida el paquete y le envía mensaje (mensaje sin SOM, ni ID, ni EOM) por cola a la aplicacion.
- *			Reincia su ciclo. 			 
+ *			Ya con bloque de memoria disponible queda a la espera de señal de mensaje listo para enviar.
+ *			Cuando recibe dicha señal, envía mensaje (sin SOM, ni ID, ni EOM) por cola a la aplicacion.
+ *			Reincia su ciclo.
  * 
  * @param[in] pvParameters Puntero a la estructura de separación de frames. 
  */
@@ -363,7 +361,7 @@ void tarea_recibir_paquete_de_UART(void* pvParameters)
 	{
 		do	// R_C2_8 pido un bloque del pool, si no hay bloque disponible quedo a la espera de la señal que me avisa que se libero un bloque y vuelvo a pedir memoria
 		{
-			handler->buffer = (uint8_t*) QMPool_get(&Pool_memoria, 0);
+			handler->buffer = (uint8_t*) QMPool_get(&(handler->pool_memoria), 0);
 			if(handler->buffer == NULL)
 			{
 				sf_reception_set(handler, RECEPCION_DESACTIVADA);	// R_C2_9 Si no había memoria anulo la recepcion por UART.
@@ -376,14 +374,7 @@ void tarea_recibir_paquete_de_UART(void* pvParameters)
 		}
 		while (handler->buffer == NULL);
 
-		do
-		{
-			xSemaphoreTake(handler->sem_ISR,portMAX_DELAY);	//Espero que la ISR me indique que tiene un paquete listo
-		}
-		while(!(sf_paquete_validar(handler)));
-
-		handler->ptr_mensaje->datos = handler->buffer + INDICE_INICIO_MENSAJE; //Cargo puntero con inicio de mensaje para la aplicación
-		handler->ptr_mensaje->cantidad = handler->cantidad - CANT_BYTE_HEADER;
+		xSemaphoreTake(handler->sem_ISR, portMAX_DELAY);	//Espero que la RX_ISR me indique que tiene un mensaje listo para enviar
 		sf_mensaje_enviar(handler);
 		sf_reiniciar_mensaje(handler);
 	}
@@ -402,7 +393,7 @@ void tarea_enviar_paquete_por_UART(void* pvParameters)
 	sf_mensajeProcesado_recibir(handler);
 	//ARMAR NUEVO PAQUETE AQUÍ
 	//ENVIAR PORT UART PAQUETE PROCESADO
-	sf_bloque_de_memoria_liberar(handler->ptr_mensaje);
+	sf_bloque_de_memoria_liberar(handler);
 	xSemaphoreGive(handler->sem_bloque_liberado);
 	}
 }
@@ -422,7 +413,12 @@ void sf_RX_ISR( void *parametro )
 
 	if (sf_recibir_byte(handler, byte_recibido))	// R_C2_5 Proceso el byte en contexto de interrupcion, si llego EOM devuelve true, sino devuelve false
 	{
-		xSemaphoreGiveFromISR(handler->sem_ISR, &xHigherPriorityTaskWoken ); // Le aviso a la tarea encargada de recibir datos que llego un paquete.
+		if (sf_paquete_validar(handler))
+		{
+			handler->ptr_mensaje->datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
+			handler->ptr_mensaje->cantidad = handler->cantidad - CANT_BYTE_HEADER;
+			xSemaphoreGiveFromISR(handler->sem_ISR, &xHigherPriorityTaskWoken);    // Envio señal de mensaje listo para enviar
+		}
 	}
 }
 

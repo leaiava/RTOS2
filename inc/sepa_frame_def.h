@@ -36,5 +36,7 @@
 #define POS_CRC_H	2
 #define POS_CRC_L	3
 
-#define S_LEFT_1B	8 //SHIFT LEFT 8BITS
+#define S_LEFT_4b	4 //SHIFT LEFT 8BITS
+
+#define ASCII_TO_DEC	55
 #endif

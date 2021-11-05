@@ -191,7 +191,7 @@ static bool sf_validar_crc8(sf_t* handler)
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 	if (sf_byte_valido(handler->buffer[handler->cantidad - POS_CRC_L]))
-		CRC_paquete += (sf_atoi(handler->buffer[handler->cantidad - POS_CRC_L])) << S_LEFT_1B;
+		CRC_paquete += (sf_atoi(handler->buffer[handler->cantidad - POS_CRC_L])) << S_LEFT_4b;
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 
@@ -231,7 +231,7 @@ static uint8_t sf_atoi(uint8_t byte)
 {
 	if((byte >= ASCII_0)&&(byte <= ASCII_9))
 		return (byte - ASCII_0);
-	return (byte - ASCII_A);			// Si no esta entre 0 y 9 se que esta entre A y F
+	return (byte - ASCII_TO_DEC);			// Si no esta entre 0 y 9 se que esta entre A y F
 }
 
 /**

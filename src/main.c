@@ -75,7 +75,7 @@ void tarea_principal(void* pvParameters)
 		// Mando a la UART para debug
 		uartWriteString(UART_USED, handler->ptr_mensaje->datos);
 #endif
-		sf_mensajeProcesado_enviar(handler);
+		sf_mensaje_procesado_enviar(handler);
 	}
 }
 

@@ -275,8 +275,8 @@ static bool sf_bloque_de_memoria_nuevo(sf_t* handler)
 static bool sf_paquete_validar(sf_t* handler)
 {
 	bool resp = false;
-	//falta validar el ID
-	if (sf_validar_crc8(handler))
+	
+	if (sf_validar_crc8(handler) && sf_validar_id(handler))
 		resp = true;
 	else
 		sf_reiniciar_mensaje(handler);

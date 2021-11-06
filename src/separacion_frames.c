@@ -18,6 +18,7 @@
 static bool sf_reception_set(sf_t* handler, bool set_int);
 static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido);
 static bool sf_paquete_validar(sf_t* handler);
+static bool sf_validar_id(sf_t* handler);
 static bool sf_validar_crc8(sf_t* handler);
 static bool sf_byte_valido(uint8_t byte);
 static bool sf_bloque_de_memoria_nuevo(sf_t* handler);
@@ -172,6 +173,21 @@ static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 return resp;
 }
 
+/**
+ * @brief Valida si el ID recibido es correcto.
+ * 
+ * @return true  Si el ID es correcto.
+ * @return false Si el ID es incorrecto.
+ */
+static bool sf_validar_id(sf_t* handler)
+{
+	for(uint8_t i = INDICE_INICIO_ID ; i < (INDICE_INICIO_ID + LEN_ID) ; i++)
+	{
+		if(!sf_byte_valido(handler->buffer[i]))
+			return false;
+	}
+	return true;
+}
 /**
  * @brief Valida si el CRC recibido es correcto.
  * 

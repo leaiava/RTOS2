@@ -15,6 +15,7 @@
 #include "crc8.h"
 #include "objeto.h"
 #include "qmpool.h"
+#include "timers.h"
 
 typedef struct
 {
@@ -31,6 +32,8 @@ typedef struct
     tMensaje *ptr_mensaje;                 ///< Puntero al mensaje a enviarse a través del objeto.
     void *prt_pool;                        ///< Puntero al pool de memoria.
     QMPool pool_memoria;                   ///< Memory pool (contienen la información que necesita la biblioteca qmpool.h)
+    TimerHandle_t timer;                   ///< Timer
+    TickType_t periodo_timer;              ///< Periodo del timer
 } sf_t;
 
 sf_t* sf_crear(void);

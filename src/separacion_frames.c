@@ -31,6 +31,7 @@ static void tarea_recibir_paquete_uart(void* pvParameters);
 static void tarea_enviar_paquete_uart(void* pvParameters);
 static void sf_rx_isr(void* parametro);
 static void sf_tx_isr(void* parametro);
+void timer_callback(TimerHandle_t xTimer);
 
 /**
  * @brief Asigna memoria para una estructura de separcion de frames y devuelve puntero a ella.
@@ -108,6 +109,21 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	configASSERT(handler->sem_ISR != NULL);
 	configASSERT(handler->sem_bloque_liberado != NULL);
 
+    handler->periodo_timer = TIMEOUT;
+
+    handler->timer = xTimerCreate(
+                    "Timer",
+                    handler->periodo_timer, //Timeout
+                    pdFALSE,                //One-shot
+                    handler,                //Estructura de datos que llega al callback
+                    timer_callback
+    );
+
+    configASSERT(handler->timer != NULL);
+
+    gpioInit( GPIO0, GPIO_OUTPUT ); // Para debug timer
+    //xTimerStart(handler->timer, portMAX_DELAY);
+
 	return true;
 }
 
@@ -156,15 +172,20 @@ static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 		}
 		if (handler->SOM  )
 		{
+			xTimerStart(handler->timer, portMAX_DELAY);       // R_C2_18
+			gpioWrite(GPIO0, ON);                             // Para debug timer
+
 			handler->buffer[handler->cantidad] = byte_recibido;	// R_C2_6
 			handler->cantidad++;
 			if (byte_recibido == EOM_BYTE)	// R_C2_3
 			{
+				xTimerStop(handler->timer, portMAX_DELAY);    // Si se recibe EOM detiene el timer
 				handler->EOM = true;
 				resp = true;
 			}
 			if((handler->cantidad == MSG_MAX_SIZE) && (handler->EOM == false)) // R_C2_7 Si llegue al maximo tamaño de paquete y no recibí el EOM reinicio
 			{
+				xTimerStop(handler->timer, portMAX_DELAY);
 				handler->cantidad = 0;
 				handler->SOM = false;
 			}
@@ -437,4 +458,20 @@ static void sf_tx_isr( void *parametro )
 {
 	sf_t* handler = (sf_t*) parametro;
 
+}
+
+/**
+ * @brief Timer callback.
+ * 
+ * @param xTimer    Timer handler.
+ */
+void timer_callback(TimerHandle_t xTimer)
+{
+    sf_t* handler = (sf_t*)pvTimerGetTimerID(xTimer);
+    if (xTimer == handler->timer)                       // R_C2_17
+    {
+        handler->cantidad = 0;
+        handler->SOM = false;
+        gpioWrite(GPIO0, OFF);                          // Para debug timer
+    }
 }

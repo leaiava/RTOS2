@@ -26,9 +26,6 @@ static uint8_t sf_decodificar_ascii(uint8_t byte);
 static void sf_bloque_de_memoria_liberar(sf_t* handler);
 static void sf_reiniciar_mensaje(sf_t* handler);
 static void sf_mensaje_enviar( sf_t* handler );
-static void sf_mensaje_procesado_recibir( sf_t* handler );
-static void tarea_recibir_paquete_uart(void* pvParameters);
-static void tarea_enviar_paquete_uart(void* pvParameters);
 static void sf_rx_isr(void* parametro);
 static void sf_tx_isr(void* parametro);
 

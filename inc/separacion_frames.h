@@ -22,16 +22,14 @@ typedef struct
     uartMap_t uart;                        ///< Nombre de la UART del LPC4337 a utilizar.
     uint32_t baudRate;                     ///< BaudRate seleccionado para la comunicacion serie.
     uint8_t *buffer;                       ///< Buffer para la recepción de bytes.
-    uint32_t cantidad;                     ///< Cantidad de bytes recibidos.
+    uint32_t cantidad;                     ///< Cantidad de bytes recibidos.    
     bool SOM;                              ///< Flag para indicar si llego el SOM.
     bool EOM;                              ///< Flag para indicar si llego el EOM.
-    SemaphoreHandle_t sem_ISR;             ///< Semaforo que la ISR usa para indicarle a la tarea que tiene un paquete listo.
-    SemaphoreHandle_t sem_bloque_liberado; ///< Semaforo que le indica al driver que se libero un bloque de memoria.
     tObjeto *ptr_objeto1;                  ///< Puntero al objeto usado para enviar el mensaje del driver a la aplicacion.
-    tObjeto *ptr_objeto2;                  ///< Puntero al objeto usado para enviar el mensaje de la aplicacion al driver.
     tMensaje *ptr_mensaje;                 ///< Puntero al mensaje a enviarse a través del objeto.
     void *prt_pool;                        ///< Puntero al pool de memoria.
     QMPool pool_memoria;                   ///< Memory pool (contienen la información que necesita la biblioteca qmpool.h)
+    bool sin_memoria;                      ///< Flag para indicar que pidió un bloque de memoria y no había bloque disponible.
     TimerHandle_t timer;                   ///< Timer
     TickType_t periodo_timer;              ///< Periodo del timer
 } sf_t;
@@ -39,7 +37,7 @@ typedef struct
 sf_t* sf_crear(void);
 bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate);
 
-void sf_mensaje_recibir(sf_t* handler);
+bool sf_mensaje_recibir(sf_t* handler);
 void sf_mensaje_procesado_enviar(sf_t* handler);
 
 #endif /* separacion_frames_H_ */

@@ -18,7 +18,7 @@
 /*==================[definiciones y macros]==================================*/
 #define UART_USED	UART_USB
 #define BAUD_RATE	115200
-#define miDEBUG
+
 /*==================[definiciones de datos internos]=========================*/
 
 /*==================[definiciones de datos externos]=========================*/
@@ -71,10 +71,6 @@ void tarea_principal(void* pvParameters)
 
 		// Procesar mensaje
 
-#ifdef miDEBUG
-		// Mando a la UART para debug
-		uartWriteString(UART_USED, handler->ptr_mensaje->datos);
-#endif
 		sf_mensaje_procesado_enviar(handler);
 	}
 }

@@ -26,11 +26,9 @@ static uint8_t sf_decodificar_ascii(uint8_t byte);
 static void sf_bloque_de_memoria_liberar(sf_t* handler);
 static void sf_reiniciar_mensaje(sf_t* handler);
 static void sf_mensaje_enviar( sf_t* handler );
-static void sf_mensaje_procesado_recibir( sf_t* handler );
-static void tarea_recibir_paquete_uart(void* pvParameters);
-static void tarea_enviar_paquete_uart(void* pvParameters);
 static void sf_rx_isr(void* parametro);
 static void sf_tx_isr(void* parametro);
+static void timer_callback(TimerHandle_t xTimer);
 
 /**
  * @brief Asigna memoria para una estructura de separcion de frames y devuelve puntero a ella.
@@ -76,6 +74,20 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 
 	uartConfig(handler->uart, handler->baudRate);
 	uartCallbackSet(handler->uart, UART_RECEIVE, sf_rx_isr, handler);
+
+    handler->periodo_timer = TIMEOUT;
+
+    handler->timer = xTimerCreate(
+                    "Timer",
+                    handler->periodo_timer, //Timeout
+                    pdFALSE,                //One-shot
+                    handler,                //Estructura de datos que llega al callback
+                    timer_callback
+    );
+
+    configASSERT(handler->timer != NULL);
+
+    gpioInit( GPIO0, GPIO_OUTPUT ); // Para debug timer
 	return true;
 }
 
@@ -115,6 +127,7 @@ static bool sf_reception_set(sf_t* handler, bool set_int)
 static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 {
 	bool resp = false;
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	if(handler != NULL)
 	{
 		if (byte_recibido == SOM_BYTE)	// R_C2_3
@@ -124,15 +137,20 @@ static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 		}
 		if (handler->SOM  )
 		{
+			xTimerStartFromISR(handler->timer, &xHigherPriorityTaskWoken);         // R_C2_18
+			gpioWrite(GPIO0, ON);                             // Para debug timer
+
 			handler->buffer[handler->cantidad] = byte_recibido;	// R_C2_6
 			handler->cantidad++;
 			if (byte_recibido == EOM_BYTE)	// R_C2_3
 			{
+				xTimerStopFromISR(handler->timer, &xHigherPriorityTaskWoken);    // Si se recibe EOM detiene el timer
 				handler->EOM = true;
 				resp = true;
 			}
 			if((handler->cantidad == MSG_MAX_SIZE) && (handler->EOM == false)) // R_C2_7 Si llegue al maximo tamaño de paquete y no recibí el EOM reinicio
 			{
+				xTimerStopFromISR(handler->timer, &xHigherPriorityTaskWoken);
 				handler->cantidad = 0;
 				handler->SOM = false;
 			}
@@ -283,7 +301,7 @@ static void sf_mensaje_enviar(sf_t* handler)
 /**
  * @brief La aplicación le avisa por acá que procesó un dato. 
  * 
- * @details Dispara la interuupcion tx_isr, mientras haya espacio en el buffer de transmisión se ejecuta la tx_isr
+ * @details Dispara la interrupción tx_isr, mientras haya espacio en el buffer de transmisión se ejecuta la tx_isr
  * 
  * @param[in] handler Puntero a la estructura de separación de frames.
  */
@@ -370,4 +388,20 @@ static void sf_tx_isr( void *parametro )
 	}
 	
 	
+}
+
+/**
+ * @brief Timer callback.
+ * 
+ * @param xTimer    Timer handler.
+ */
+static void timer_callback(TimerHandle_t xTimer)
+{
+    sf_t* handler = (sf_t*)pvTimerGetTimerID(xTimer);
+    if (xTimer == handler->timer)                       // R_C2_17
+    {
+        gpioWrite(GPIO0, OFF);                          // Para debug timer
+        handler->cantidad = 0;
+        handler->SOM = false;
+    }
 }

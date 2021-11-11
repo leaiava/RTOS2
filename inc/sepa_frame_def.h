@@ -39,4 +39,8 @@
 #define S_LEFT_4b               4 // SHIFT LEFT 4BITS
 
 #define ASCII_TO_NUM            55
+
+#define TIMEOUT_MS              4 // R_C2_19
+#define TIMEOUT                 pdMS_TO_TICKS(TIMEOUT_MS)
+
 #endif

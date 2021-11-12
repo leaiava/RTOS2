@@ -4,8 +4,8 @@
  * 					   Leandro Arrieta <leandroarrieta@gmail.com>
  * All rights reserved.
  * License: Free
- * Date: 30/10/2021
- * Version: v1.0
+ * Date: 12/11/2021
+ * Version: v2.0
  *===========================================================================*/
 
 #include "separacion_frames.h"
@@ -261,10 +261,10 @@ static bool sf_paquete_validar(sf_t* handler)
 {
 	bool resp = false;
 	
-	if (sf_validar_crc8(handler) && sf_validar_id(handler))
+	if (sf_validar_crc8(handler) && sf_validar_id(handler)) //R_C2_11
 		resp = true;
 	else
-		sf_reiniciar_mensaje(handler);
+		sf_reiniciar_mensaje(handler);						// R_C2_12
 	return resp;
 }
 
@@ -277,7 +277,7 @@ static bool sf_paquete_validar(sf_t* handler)
 bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje)
 {
 	//  Pido un bloque de memoria nuevo, en caso de error termino.
-	if (!sf_bloque_de_memoria_nuevo(handler))
+	if (!sf_bloque_de_memoria_nuevo(handler))		// R_C2_8
 		return false;								// R_C2_9
 
 	sf_reception_set(handler, RECEPCION_ACTIVADA ); // habilito la recepcion por UART.
@@ -340,12 +340,11 @@ static void sf_rx_isr( void *parametro )
 
 	if (sf_recibir_byte(handler, byte_recibido))	// R_C2_5 Proceso el byte en contexto de interrupcion, si llego EOM devuelve true, sino devuelve false
 	{
-		if (sf_paquete_validar(handler))
+		if (sf_paquete_validar(handler))			// R_C2_10
 		{
 			mensaje.ptr_datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
 			mensaje.cantidad = handler->cantidad - LEN_HEADER;
-			objeto_post_fromISR(handler->ptr_objeto1->cola, &mensaje, &xHigherPriorityTaskWoken);
-			//objeto_post(handler->ptr_objeto1, mensaje);
+			objeto_post_fromISR(handler->ptr_objeto1, mensaje, &xHigherPriorityTaskWoken);
 			sf_reiniciar_mensaje(handler);
 
 		}
@@ -366,17 +365,17 @@ static void sf_tx_isr( void *parametro )
 
 	if (indice_byte_enviado == 0)
 		{
-			objeto_get_fromISR(handler->ptr_objeto2->cola, &handler->mensaje, &xTaskWokenByReceive);
+			objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive);
 		}
 	
 	if(handler->mensaje.cantidad != 0)
 	{
-		uartTxWrite(handler->uart, *(handler->mensaje.ptr_datos - INDICE_INICIO_MENSAJE + indice_byte_enviado) );
+		uartTxWrite(handler->uart, *(handler->mensaje.ptr_datos - INDICE_INICIO_MENSAJE + indice_byte_enviado) ); // R_C2_13 - R_C2_16
 		indice_byte_enviado++;
 		if ( indice_byte_enviado == (handler->mensaje.cantidad + LEN_HEADER))
 		{
 			indice_byte_enviado = 0;
-			sf_bloque_de_memoria_liberar(handler);
+			sf_bloque_de_memoria_liberar(handler); 			// R_C2_15
 			handler->mensaje.cantidad = 0;
 			handler->mensaje.ptr_datos = NULL;
 			uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para parar la tx_isr

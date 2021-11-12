@@ -4,8 +4,8 @@
  * 					   Leandro Arrieta <leandroarrieta@gmail.com>
  * All rights reserved.
  * License: Free
- * Date: 30/10/2021
- * Version: v1.0
+ * Date: 12/11/2021
+ * Version: v2.0
  *===========================================================================*/
 
 #ifndef OBJETO_H_
@@ -21,8 +21,6 @@
 
 /*==================[definiciones y macros]==================================*/
 #define N_QUEUE	10
-#define objeto_post_fromISR(x,y,z)	xQueueSendFromISR(x,y,z)
-#define objeto_get_fromISR(x,y,z)	xQueueReceiveFromISR(x,y,z)
 
 typedef struct
 {
@@ -37,7 +35,9 @@ typedef struct
 
 tObjeto* objeto_crear();
 void objeto_post( tObjeto* objeto,tMensaje mensaje );
+void objeto_post_fromISR( tObjeto* objeto,tMensaje mensaje, BaseType_t *pxHigherPriorityTaskWoken );
 void objeto_get( tObjeto* objeto,tMensaje* mensaje );
+void objeto_get_fromISR( tObjeto* objeto,tMensaje* mensaje, BaseType_t *pxHigherPriorityTaskWoken );
 void objeto_borrar( tObjeto* objeto);
 
 #endif /* OBJETO_H_ */

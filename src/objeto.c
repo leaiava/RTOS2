@@ -4,8 +4,8 @@
  * 					   Leandro Arrieta <leandroarrieta@gmail.com>
  * All rights reserved.
  * License: Free
- * Date: 30/10/2021
- * Version: v1.0
+ * Date: 12/11/2021
+ * Version: v2.0
  *===========================================================================*/
 
 /*==================[inclusiones]============================================*/
@@ -45,9 +45,19 @@ void objeto_post(tObjeto* objeto, tMensaje mensaje)
 	xQueueSend(objeto->cola, &mensaje, portMAX_DELAY);
 }
 
+void objeto_post_fromISR( tObjeto* objeto,tMensaje mensaje, BaseType_t *pxHigherPriorityTaskWoken )
+{
+	xQueueSendFromISR(objeto->cola, &mensaje, pxHigherPriorityTaskWoken);
+}
+
 void objeto_get(tObjeto* objeto, tMensaje* mensaje)
 {
     xQueueReceive(objeto->cola, mensaje, portMAX_DELAY);
+}
+
+void objeto_get_fromISR( tObjeto* objeto,tMensaje* mensaje, BaseType_t *pxHigherPriorityTaskWoken )
+{
+	xQueueReceiveFromISR(objeto->cola, mensaje, pxHigherPriorityTaskWoken );
 }
 
 void objeto_borrar(tObjeto* objeto)

@@ -142,20 +142,20 @@ void QMPool_init( QMPool * const me, void * const poolSto,
 void QMPool_put( QMPool * const me, void *b )
 {
 
-    //UBaseType_t uxSavedInterruptStatus;
+    UBaseType_t uxSavedInterruptStatus;
     /** @pre # free blocks cannot exceed the total # blocks and
     * the block pointer must be from this pool.
     */
 
-    portENTER_CRITICAL(); //Enter on critical section
-    //uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+    //portENTER_CRITICAL(); //Enter on critical section
+    uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 
     ( ( QFreeBlock * )b )->next = ( QFreeBlock * )me->free_head; /* link into list */
     me->free_head = b;      /* set as new head of the free list */
     ++me->nFree;            /* one more free block in this pool */
-    //taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
+    taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
 
-    portEXIT_CRITICAL(); //Exit from critical section
+    //portEXIT_CRITICAL(); //Exit from critical section
 }
 
 /****************************************************************************/

@@ -29,7 +29,6 @@ typedef struct
     tMensaje *ptr_mensaje;                 ///< Puntero al mensaje a enviarse a través del objeto.
     void *prt_pool;                        ///< Puntero al pool de memoria.
     QMPool pool_memoria;                   ///< Memory pool (contienen la información que necesita la biblioteca qmpool.h)
-    bool sin_memoria;                      ///< Flag para indicar que pidió un bloque de memoria y no había bloque disponible.
     TimerHandle_t timer;                   ///< Timer
     TickType_t periodo_timer;              ///< Periodo del timer
 } sf_t;

@@ -24,7 +24,7 @@
 
 typedef struct
 {
-	uint8_t* datos;
+	uint8_t* ptr_datos;
 	uint32_t cantidad;
 }tMensaje;
 

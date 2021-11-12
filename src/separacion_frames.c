@@ -319,7 +319,8 @@ void sf_mensaje_procesado_enviar( sf_t* handler )
  */
 void sf_bloque_de_memoria_liberar(sf_t* handler)
 {
-	QMPool_put(&(handler->pool_memoria), handler->ptr_mensaje-INDICE_INICIO_MENSAJE); // El inicio del bloque tiene como offset el INDICE_INICIO_MENSAJE
+	QMPool_put(&(handler->pool_memoria), handler->ptr_mensaje->ptr_datos - INDICE_INICIO_MENSAJE); // El inicio del bloque tiene como offset el INDICE_INICIO_MENSAJE
+
 }
 
 /**
@@ -351,7 +352,7 @@ static void sf_rx_isr( void *parametro )
 	{
 		if (sf_paquete_validar(handler))
 		{
-			handler->ptr_mensaje->datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
+			handler->ptr_mensaje->ptr_datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
 			handler->ptr_mensaje->cantidad = handler->cantidad - LEN_HEADER;
 			sf_mensaje_enviar(handler);
 			sf_reiniciar_mensaje(handler);
@@ -371,19 +372,14 @@ static void sf_tx_isr( void *parametro )
 	static uint32_t indice_byte_enviado = 0;
 	
 	
-	uartTxWrite(handler->uart, *(handler->ptr_mensaje->datos - INDICE_INICIO_MENSAJE + indice_byte_enviado) );
+	uartTxWrite(handler->uart, *(handler->ptr_mensaje->ptr_datos - INDICE_INICIO_MENSAJE + indice_byte_enviado) );
 	indice_byte_enviado++;
 	if ( indice_byte_enviado == (handler->ptr_mensaje->cantidad + LEN_HEADER))
 	{
 		indice_byte_enviado = 0;
-		/*
+
 		sf_bloque_de_memoria_liberar(handler);
-		if(handler->sin_memoria == true)
-		{
-			sf_bloque_de_memoria_nuevo(handler);
-			handler->sin_memoria = false;
-		}
-*/
+
 		uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para eliminar la tx_isr
 	}
 	

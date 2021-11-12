@@ -21,7 +21,7 @@ Se utilizan bloques de memoria del tamaño máximo de los paquetes que se pueden
 
 ## Arquitectura del sistema
 
-La capa de separación de frames esta compuesta principalmente por la función de y las rutinas de atención de interrupción de RX y TX de la UART.
+La capa de separación de frames esta compuesta principalmente por la función de recibir mensaje y las rutinas de atención de interrupción de RX y TX de la UART.
 
 Función de recibir mensaje: se encarga de pedir un bloque de memoria al pool, de habilitar la recepción por UART cuando lo obtiene. Y se queda esperando que se publique un mensaje en la cola de objeto 1.
 

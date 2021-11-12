@@ -19,6 +19,19 @@ Utilizamos la biblioteca qf_mem.c para el manejo de la memoria dinámica.
 
 Se utilizan bloques de memoria del tamaño máximo de los paquetes que se pueden recibir. La capa de separación de frames es la encargada de pedir un bloque de memoria al pool, guardar en contexto de interrupción los bytes recibidos en ese bloque y de pasarle el mensaje a la aplicación para que lo procese. Una vez que la capa de separación de frame recibe el mensaje procesado vuelve a enviar el paquete por la UART y libera el bloque de memoria. La capa de separación de frames, mientras espera la respuesta de la aplicación, pide un nuevo bloque de memoria al pool para poder recibir otro paquete por UART.
 
+## Arquitectura del sistema
+
+La capa de separación de frames esta compuesta principalmente por la función de y las rutinas de atención de interrupción de RX y TX de la UART.
+
+Función de recibir mensaje: se encarga de pedir un bloque de memoria al pool, de habilitar la recepción por UART cuando lo obtiene. Y se queda esperando que se publique un mensaje en la cola de objeto 1.
+
+Rutina de interrupción de recepción: recibe con sAPI los bytes de la UART y se fija que llegue el SOM y EOM. Cuando el paquete está completo y es válido, manda el paquete por la cola de objeto 1.
+
+Aplicación: Se queda esperando el mensaje por cola, cuando lo recibe lo procesa y lo devuelve a la capa de separacion de frame a través de la cola de objeto 2.
+
+Rutina de interrupción de transmisión: obtiene el mensaje procesado la cola de objeto 2, lo envía por la UART y libera la memoria.
+
+
 # Requerimientos
 [Lista de requerimientos.](https://docs.google.com/spreadsheets/d/1-VyaQY0eDLpg12Eqkxe7_bfCb77LKIbDfVTNDGFBpu0/edit?usp=sharing)
 
@@ -45,9 +58,9 @@ Se utilizan bloques de memoria del tamaño máximo de los paquetes que se pueden
 - [x] R_C2_14
 - [x] R_C2_15
 - [x] R_C2_16
-- [ ] R_C2_17
-- [ ] R_C2_18
-- [ ] R_C2_19
+- [x] R_C2_17
+- [x] R_C2_18
+- [x] R_C2_19
 - [ ] R_C2_20
 - [ ] R_C2_21
 - [ ] R_C2_22

@@ -4,8 +4,8 @@
  * 					   Leandro Arrieta <leandroarrieta@gmail.com>
  * All rights reserved.
  * License: Free
- * Date: 30/10/2021
- * Version: v1.0
+ * Date: 12/11/2021
+ * Version: v2.0
  *===========================================================================*/
 
 #include "separacion_frames.h"
@@ -18,18 +18,16 @@
 static bool sf_reception_set(sf_t* handler, bool set_int);
 static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido);
 static bool sf_paquete_validar(sf_t* handler);
+static bool sf_validar_id(sf_t* handler);
 static bool sf_validar_crc8(sf_t* handler);
 static bool sf_byte_valido(uint8_t byte);
 static bool sf_bloque_de_memoria_nuevo(sf_t* handler);
 static uint8_t sf_decodificar_ascii(uint8_t byte);
 static void sf_bloque_de_memoria_liberar(sf_t* handler);
 static void sf_reiniciar_mensaje(sf_t* handler);
-static void sf_mensaje_enviar( sf_t* handler );
-static void sf_mensaje_procesado_recibir( sf_t* handler );
-static void tarea_recibir_paquete_uart(void* pvParameters);
-static void tarea_enviar_paquete_uart(void* pvParameters);
 static void sf_rx_isr(void* parametro);
 static void sf_tx_isr(void* parametro);
+static void timer_callback(TimerHandle_t xTimer);
 
 /**
  * @brief Asigna memoria para una estructura de separcion de frames y devuelve puntero a ella.
@@ -62,8 +60,6 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	handler->baudRate = baudRate;
 	handler->ptr_objeto1 = objeto_crear();
 	handler->ptr_objeto2 = objeto_crear();
-	handler->ptr_mensaje = pvPortMalloc(sizeof(tMensaje));
-	configASSERT(handler->ptr_mensaje != NULL);
 	handler->EOM = false;
 	handler->SOM = false;
 	handler->cantidad = 0;
@@ -77,36 +73,19 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	uartConfig(handler->uart, handler->baudRate);
 	uartCallbackSet(handler->uart, UART_RECEIVE, sf_rx_isr, handler);
 
-	BaseType_t res;
+    handler->periodo_timer = TIMEOUT;
 
-	res = xTaskCreate(
-		tarea_recibir_paquete_uart,          // Funcion de la tarea a ejecutar
-		(const char *)"tarea_recibir_paquete",  // Nombre de la tarea como String amigable para el usuario
-		configMINIMAL_STACK_SIZE * 2,           // Cantidad de stack de la tarea
-		handler,                                // Parametros de tarea
-		tskIDLE_PRIORITY + 1,                   // Prioridad de la tarea
-		0                                       // Puntero a la tarea creada en el sistema
-	);
+    handler->timer = xTimerCreate(
+                    "Timer",
+                    handler->periodo_timer, //Timeout
+                    pdFALSE,                //One-shot
+                    handler,                //Estructura de datos que llega al callback
+                    timer_callback
+    );
 
-	configASSERT(res = pdPASS);
+    configASSERT(handler->timer != NULL);
 
-	res = xTaskCreate(
-		tarea_enviar_paquete_uart,          // Funcion de la tarea a ejecutar
-		(const char *)"tarea_enviar_paquete",   // Nombre de la tarea como String amigable para el usuario
-		configMINIMAL_STACK_SIZE * 2,           // Cantidad de stack de la tarea
-		handler,                                // Parametros de tarea
-		tskIDLE_PRIORITY + 1,                   // Prioridad de la tarea
-		0                                       // Puntero a la tarea creada en el sistema
-	);
-
-	configASSERT(res = pdPASS);
-
-	handler->sem_ISR = xSemaphoreCreateBinary();
-	handler->sem_bloque_liberado = xSemaphoreCreateBinary();
-
-	configASSERT(handler->sem_ISR != NULL);
-	configASSERT(handler->sem_bloque_liberado != NULL);
-
+    gpioInit( GPIO0, GPIO_OUTPUT ); // Para debug timer
 	return true;
 }
 
@@ -146,6 +125,7 @@ static bool sf_reception_set(sf_t* handler, bool set_int)
 static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 {
 	bool resp = false;
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	if(handler != NULL)
 	{
 		if (byte_recibido == SOM_BYTE)	// R_C2_3
@@ -155,21 +135,42 @@ static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 		}
 		if (handler->SOM  )
 		{
+			xTimerStartFromISR(handler->timer, &xHigherPriorityTaskWoken);         // R_C2_18
+			gpioWrite(GPIO0, ON);                             // Para debug timer
+
 			handler->buffer[handler->cantidad] = byte_recibido;	// R_C2_6
 			handler->cantidad++;
 			if (byte_recibido == EOM_BYTE)	// R_C2_3
 			{
+				xTimerStopFromISR(handler->timer, &xHigherPriorityTaskWoken);    // Si se recibe EOM detiene el timer
 				handler->EOM = true;
 				resp = true;
 			}
 			if((handler->cantidad == MSG_MAX_SIZE) && (handler->EOM == false)) // R_C2_7 Si llegue al maximo tamaño de paquete y no recibí el EOM reinicio
 			{
+				xTimerStopFromISR(handler->timer, &xHigherPriorityTaskWoken);
 				handler->cantidad = 0;
 				handler->SOM = false;
 			}
 		}
 	}
 return resp;
+}
+
+/**
+ * @brief Valida si el ID recibido es correcto.
+ * 
+ * @return true  Si el ID es correcto.
+ * @return false Si el ID es incorrecto.
+ */
+static bool sf_validar_id(sf_t* handler)
+{
+	for(uint8_t i = INDICE_INICIO_ID ; i < (INDICE_INICIO_ID + LEN_ID) ; i++)
+	{
+		if(!sf_byte_valido(handler->buffer[i]))
+			return false;
+	}
+	return true;
 }
 
 /**
@@ -259,11 +260,11 @@ static bool sf_bloque_de_memoria_nuevo(sf_t* handler)
 static bool sf_paquete_validar(sf_t* handler)
 {
 	bool resp = false;
-	//falta validar el ID
-	if (sf_validar_crc8(handler))
+	
+	if (sf_validar_crc8(handler) && sf_validar_id(handler)) //R_C2_11
 		resp = true;
 	else
-		sf_reiniciar_mensaje(handler);
+		sf_reiniciar_mensaje(handler);						// R_C2_12
 	return resp;
 }
 
@@ -273,39 +274,31 @@ static bool sf_paquete_validar(sf_t* handler)
  * @param[in] handler Puntero a la estructura de separación de frames.
  *
  */
-void sf_mensaje_recibir(sf_t* handler)
+bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje)
 {
-	objeto_get(handler->ptr_objeto1, handler->ptr_mensaje);
-}
+	//  Pido un bloque de memoria nuevo, en caso de error termino.
+	if (!sf_bloque_de_memoria_nuevo(handler))		// R_C2_8
+		return false;								// R_C2_9
 
-/**
- * @brief El driver envía con esta función el mensaje a la aplicación avisando de que hay un nuevo paquete.
- * 
- * @param[in] handler Puntero a la estructura de separación de frames.
- */
-static void sf_mensaje_enviar(sf_t* handler)
-{
-	objeto_post(handler->ptr_objeto1, *handler->ptr_mensaje);
-}
+	sf_reception_set(handler, RECEPCION_ACTIVADA ); // habilito la recepcion por UART.
 
-/**
- * @brief El driver se queda esperando que la aplicación le pase un nuevo dato procesado 
- * 
- * @param[in] handler Puntero a la estructura de separación de frames.
- */
-static void sf_mensaje_procesado_recibir(sf_t* handler)
-{
-	objeto_get(handler->ptr_objeto2, handler->ptr_mensaje);
+	objeto_get(handler->ptr_objeto1, ptr_mensaje);
+		return true;
 }
 
 /**
  * @brief La aplicación le avisa por acá que procesó un dato. 
  * 
+ * @details Dispara la interrupción tx_isr, mientras haya espacio en el buffer de transmisión se ejecuta la tx_isr
+ * 
  * @param[in] handler Puntero a la estructura de separación de frames.
  */
-void sf_mensaje_procesado_enviar( sf_t* handler )
+void sf_mensaje_procesado_enviar( sf_t* handler, tMensaje mensaje )
 {
-	objeto_post(handler->ptr_objeto2, *handler->ptr_mensaje);
+	//Calcular nuevo CRC aqui
+	objeto_post(handler->ptr_objeto2, mensaje);
+	uartCallbackSet(handler->uart, UART_TRANSMITER_FREE, sf_tx_isr, handler);
+	uartSetPendingInterrupt(handler->uart);
 }
 
 /**
@@ -315,7 +308,8 @@ void sf_mensaje_procesado_enviar( sf_t* handler )
  */
 void sf_bloque_de_memoria_liberar(sf_t* handler)
 {
-	QMPool_put(&(handler->pool_memoria), handler->ptr_mensaje-INDICE_INICIO_MENSAJE); // El inicio del bloque tiene como offset el INDICE_INICIO_MENSAJE
+	QMPool_put(&(handler->pool_memoria), handler->mensaje.ptr_datos - INDICE_INICIO_MENSAJE); // El inicio del bloque tiene como offset el INDICE_INICIO_MENSAJE
+
 }
 
 /**
@@ -331,64 +325,6 @@ static void sf_reiniciar_mensaje(sf_t* handler)
 }
 
 /**
- * @brief Tarea de recepción de paquete completo por UART.
- * 
- * @details Pide un bloque del pool:
- *          - si no hay bloque disponible, desactiva recepción por UART y queda a la espera de la señal de bloque liberado para volver a pedirlo.
- *          - si hay bloque disponible activa recepción por UART.
- *
- *          Ya con bloque de memoria disponible queda a la espera de señal de mensaje listo para enviar.
- *          Cuando recibe dicha señal, envía mensaje (sin SOM, ni ID, ni EOM) por cola a la aplicació	n.
- *          Reincia su ciclo.
- * 
- * @param[in] pvParameters Puntero a la estructura de separación de frames. 
- */
-static void tarea_recibir_paquete_uart(void* pvParameters)
-{
-	sf_t* handler = (sf_t*) pvParameters;
-
-	while(1)
-	{
-		do	// R_C2_8 pido un bloque del pool, si no hay bloque disponible quedo a la espera de la señal que me avisa que se libero un bloque y vuelvo a pedir memoria
-		{
-			handler->buffer = (uint8_t*) QMPool_get(&(handler->pool_memoria), 0);
-			if(handler->buffer == NULL)
-			{
-				sf_reception_set(handler, RECEPCION_DESACTIVADA);	// R_C2_9 Si no había memoria anulo la recepcion por UART.
-				xSemaphoreTake(handler->sem_bloque_liberado,portMAX_DELAY); // Quedo esperando a que se libere memoria.
-			}
-			else
-			{
-				sf_reception_set(handler, RECEPCION_ACTIVADA ); // habilito la recepcion por UART.
-			}
-		}
-		while (handler->buffer == NULL);
-
-		xSemaphoreTake(handler->sem_ISR, portMAX_DELAY);	//Espero que la RX_ISR me indique que tiene un mensaje listo para enviar
-		sf_mensaje_enviar(handler);
-		sf_reiniciar_mensaje(handler);
-	}
-}
-
-/**
- * @brief Recibe el mensaje procesado, lo manda por la UART y libera la memoria.
- * 
- * @param[in] pvParameters Puntero a la estructura de separación de frames. 
- */
-static void tarea_enviar_paquete_uart(void* pvParameters)
-{
-	sf_t* handler = (sf_t*) pvParameters;
-	while(1)
-	{
-	sf_mensaje_procesado_recibir(handler);
-	//ARMAR NUEVO PAQUETE AQUÍ
-	//ENVIAR PORT UART PAQUETE PROCESADO
-	sf_bloque_de_memoria_liberar(handler);
-	xSemaphoreGive(handler->sem_bloque_liberado);
-	}
-}
-
-/**
  * @brief ISR de recepción por UART.
  * 
  * @param[in] parametro Puntero a la estructura de separación de frames. 
@@ -397,19 +333,23 @@ static void tarea_enviar_paquete_uart(void* pvParameters)
 static void sf_rx_isr( void *parametro )
 {
 	sf_t* handler = (sf_t*)parametro;
+	tMensaje mensaje;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 	uint8_t byte_recibido = uartRxRead( handler->uart ); // Leo byte de la UART con sAPI
 
 	if (sf_recibir_byte(handler, byte_recibido))	// R_C2_5 Proceso el byte en contexto de interrupcion, si llego EOM devuelve true, sino devuelve false
 	{
-		if (sf_paquete_validar(handler))
+		if (sf_paquete_validar(handler))			// R_C2_10
 		{
-			handler->ptr_mensaje->datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
-			handler->ptr_mensaje->cantidad = handler->cantidad - LEN_HEADER;
-			xSemaphoreGiveFromISR(handler->sem_ISR, &xHigherPriorityTaskWoken);    // Envio señal de mensaje listo para enviar
+			mensaje.ptr_datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
+			mensaje.cantidad = handler->cantidad - LEN_HEADER;
+			objeto_post_fromISR(handler->ptr_objeto1, mensaje, &xHigherPriorityTaskWoken);
+			sf_reiniciar_mensaje(handler);
+
 		}
 	}
+	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
 /**
@@ -420,5 +360,42 @@ static void sf_rx_isr( void *parametro )
 static void sf_tx_isr( void *parametro )
 {
 	sf_t* handler = (sf_t*) parametro;
+	static uint32_t indice_byte_enviado = 0;
+	BaseType_t xTaskWokenByReceive = pdFALSE;
 
+	if (indice_byte_enviado == 0)
+		{
+			objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive);
+		}
+	
+	if(handler->mensaje.cantidad != 0)
+	{
+		uartTxWrite(handler->uart, *(handler->mensaje.ptr_datos - INDICE_INICIO_MENSAJE + indice_byte_enviado) ); // R_C2_13 - R_C2_16
+		indice_byte_enviado++;
+		if ( indice_byte_enviado == (handler->mensaje.cantidad + LEN_HEADER))
+		{
+			indice_byte_enviado = 0;
+			sf_bloque_de_memoria_liberar(handler); 			// R_C2_15
+			handler->mensaje.cantidad = 0;
+			handler->mensaje.ptr_datos = NULL;
+			uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para parar la tx_isr
+		}
+	}
+	portYIELD_FROM_ISR( xTaskWokenByReceive );
+}
+
+/**
+ * @brief Timer callback.
+ * 
+ * @param xTimer    Timer handler.
+ */
+static void timer_callback(TimerHandle_t xTimer)
+{
+    sf_t* handler = (sf_t*)pvTimerGetTimerID(xTimer);
+    if (xTimer == handler->timer)                       // R_C2_17
+    {
+        gpioWrite(GPIO0, OFF);                          // Para debug timer
+        handler->cantidad = 0;
+        handler->SOM = false;
+    }
 }

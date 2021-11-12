@@ -31,7 +31,7 @@
 #define LEN_EOM                 1
 #define LEN_ID                  4
 #define LEN_SOM                 1
-#define LEN_HEADER              LEN_CRC+LEN_EOM+LEN_ID+LEN_SOM
+#define LEN_HEADER              (LEN_CRC+LEN_EOM+LEN_ID+LEN_SOM)
 
 #define POS_CRC_H               2
 #define POS_CRC_L               3
@@ -39,4 +39,8 @@
 #define S_LEFT_4b               4 // SHIFT LEFT 4BITS
 
 #define ASCII_TO_NUM            55
+
+#define TIMEOUT_MS              4 // R_C2_19
+#define TIMEOUT                 pdMS_TO_TICKS(TIMEOUT_MS)
+
 #endif

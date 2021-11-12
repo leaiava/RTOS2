@@ -1,4 +1,4 @@
-# RTOS2 v1.0
+# RTOS2 v2.0
 Repositorio para el Trabajo Práctico de la asignatura Sistemas Operativos en Tiempo Real 2 de la Carrera de Especialización en Sistemas Embebidos.
 
 # Miembros del grupo 3
@@ -21,15 +21,16 @@ Se utilizan bloques de memoria del tamaño máximo de los paquetes que se pueden
 
 ## Arquitectura del sistema
 
-La capa de separación de frames esta compuesta principalmente por 2 tareas y la rutina de atención de interrupción de la UART.
+La capa de separación de frames esta compuesta principalmente por la función de recibir mensaje y las rutinas de atención de interrupción de RX y TX de la UART.
 
-Tarea_recibir_paquete_de_UART: Esta tarea se encarga de pedir un bloque de memoria al pool y se queda esperando un semáforo el cual le indicará que hay un nuevo paquete recibido. Cuando recibe el semáforo valida el ID y el CRC y envía a la aplicación el mensaje a través de un objeto, que en este caso, es una cola de mensajes. Una vez enviado el mensaje pide un nuevo bloque de memoria al pool y repita la operación.
+Función de recibir mensaje: se encarga de pedir un bloque de memoria al pool, de habilitar la recepción por UART cuando lo obtiene. Y se queda esperando que se publique un mensaje en la cola de objeto 1.
 
-Rutina de interrupción: Recibe con sAPI los bytes de la UART y se fija que llegue el SOM y EOM. Cuando el paquete está completo libera un semaforo para la tarea_recibir_paquete_de_UART.
+Rutina de interrupción de recepción: recibe con sAPI los bytes de la UART y se fija que llegue el SOM y EOM. Cuando el paquete está completo y es válido, manda el paquete por la cola de objeto 1.
 
-Aplicacion: Se queda esperando el mensaje por cola, cuando lo recibe lo procesa y lo devuelve a la capa de separacion de frame.
+Aplicación: Se queda esperando el mensaje por cola, cuando lo recibe lo procesa y lo devuelve a la capa de separacion de frame a través de la cola de objeto 2.
 
-Tarea_enviar_paquete_por_UART: Recibe el mensaje procesado, lo envía por la UART y libera la memoria.
+Rutina de interrupción de transmisión: obtiene el mensaje procesado la cola de objeto 2, lo envía por la UART y libera la memoria.
+
 
 # Requerimientos
 [Lista de requerimientos.](https://docs.google.com/spreadsheets/d/1-VyaQY0eDLpg12Eqkxe7_bfCb77LKIbDfVTNDGFBpu0/edit?usp=sharing)
@@ -50,16 +51,16 @@ Tarea_enviar_paquete_por_UART: Recibe el mensaje procesado, lo envía por la UAR
 - [x] R_C2_7
 - [x] R_C2_8
 - [x] R_C2_9
-- [ ] R_C2_10
-- [ ] R_C2_11
-- [ ] R_C2_12
-- [ ] R_C2_13
-- [ ] R_C2_14
-- [ ] R_C2_15
-- [ ] R_C2_16
-- [ ] R_C2_17
-- [ ] R_C2_18
-- [ ] R_C2_19
+- [x] R_C2_10
+- [x] R_C2_11
+- [x] R_C2_12
+- [x] R_C2_13
+- [x] R_C2_14
+- [x] R_C2_15
+- [x] R_C2_16
+- [x] R_C2_17
+- [x] R_C2_18
+- [x] R_C2_19
 - [ ] R_C2_20
 - [ ] R_C2_21
 - [ ] R_C2_22

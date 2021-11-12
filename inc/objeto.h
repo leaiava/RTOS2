@@ -4,8 +4,8 @@
  * 					   Leandro Arrieta <leandroarrieta@gmail.com>
  * All rights reserved.
  * License: Free
- * Date: 30/10/2021
- * Version: v1.0
+ * Date: 12/11/2021
+ * Version: v2.0
  *===========================================================================*/
 
 #ifndef OBJETO_H_
@@ -24,7 +24,7 @@
 
 typedef struct
 {
-	uint8_t* datos;
+	uint8_t* ptr_datos;
 	uint32_t cantidad;
 }tMensaje;
 
@@ -35,7 +35,9 @@ typedef struct
 
 tObjeto* objeto_crear();
 void objeto_post( tObjeto* objeto,tMensaje mensaje );
+void objeto_post_fromISR( tObjeto* objeto,tMensaje mensaje, BaseType_t *pxHigherPriorityTaskWoken );
 void objeto_get( tObjeto* objeto,tMensaje* mensaje );
+void objeto_get_fromISR( tObjeto* objeto,tMensaje* mensaje, BaseType_t *pxHigherPriorityTaskWoken );
 void objeto_borrar( tObjeto* objeto);
 
 #endif /* OBJETO_H_ */

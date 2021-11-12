@@ -4,8 +4,8 @@
  * 					   Leandro Arrieta <leandroarrieta@gmail.com>
  * All rights reserved.
  * License: Free
- * Date: 30/10/2021
- * Version: v1.0
+ * Date: 12/11/2021
+ * Version: v2.0
  *===========================================================================*/
 
 /*==================[inclusiones]============================================*/
@@ -18,7 +18,7 @@
 /*==================[definiciones y macros]==================================*/
 #define UART_USED	UART_USB
 #define BAUD_RATE	115200
-#define miDEBUG
+
 /*==================[definiciones de datos internos]=========================*/
 
 /*==================[definiciones de datos externos]=========================*/
@@ -64,18 +64,15 @@ int main(void)
 void tarea_principal(void* pvParameters)
 {
 	sf_t* handler = (sf_t*)pvParameters;
+	tMensaje mensaje;
 	while(TRUE)
 	{
-		sf_mensaje_recibir(handler);
+		if(!sf_mensaje_recibir(handler, &mensaje))
+			error_handler();
 		// validar mensaje recibido
 
 		// Procesar mensaje
-
-#ifdef miDEBUG
-		// Mando a la UART para debug
-		uartWriteString(UART_USED, handler->ptr_mensaje->datos);
-#endif
-		sf_mensaje_procesado_enviar(handler);
+		sf_mensaje_procesado_enviar(handler, mensaje);
 	}
 }
 

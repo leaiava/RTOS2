@@ -64,14 +64,15 @@ int main(void)
 void tarea_principal(void* pvParameters)
 {
 	sf_t* handler = (sf_t*)pvParameters;
+	tMensaje mensaje;
 	while(TRUE)
 	{
-		sf_mensaje_recibir(handler);
+		if(!sf_mensaje_recibir(handler, &mensaje))
+			error_handler();
 		// validar mensaje recibido
 
 		// Procesar mensaje
-
-		sf_mensaje_procesado_enviar(handler);
+		sf_mensaje_procesado_enviar(handler, mensaje);
 	}
 }
 

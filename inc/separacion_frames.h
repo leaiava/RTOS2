@@ -26,7 +26,8 @@ typedef struct
     bool SOM;                              ///< Flag para indicar si llego el SOM.
     bool EOM;                              ///< Flag para indicar si llego el EOM.
     tObjeto *ptr_objeto1;                  ///< Puntero al objeto usado para enviar el mensaje del driver a la aplicacion.
-    tMensaje *ptr_mensaje;                 ///< Puntero al mensaje a enviarse a través del objeto.
+    tObjeto *ptr_objeto2;                  ///< Puntero al objeto usado para enviar el mensaje de la aplicacion al driver.
+    tMensaje mensaje;                      ///< Mensaje a recibirse a través del objeto.
     void *prt_pool;                        ///< Puntero al pool de memoria.
     QMPool pool_memoria;                   ///< Memory pool (contienen la información que necesita la biblioteca qmpool.h)
     TimerHandle_t timer;                   ///< Timer
@@ -36,7 +37,7 @@ typedef struct
 sf_t* sf_crear(void);
 bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate);
 
-bool sf_mensaje_recibir(sf_t* handler);
-void sf_mensaje_procesado_enviar(sf_t* handler);
+bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje);
+void sf_mensaje_procesado_enviar(sf_t* handler, tMensaje mensaje);
 
 #endif /* separacion_frames_H_ */

@@ -21,6 +21,8 @@
 
 /*==================[definiciones y macros]==================================*/
 #define N_QUEUE	10
+#define objeto_post_fromISR(x,y,z)	xQueueSendFromISR(x,y,z)
+#define objeto_get_fromISR(x,y,z)	xQueueReceiveFromISR(x,y,z)
 
 typedef struct
 {

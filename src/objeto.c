@@ -42,8 +42,7 @@ tObjeto* objeto_crear()
 
 void objeto_post(tObjeto* objeto, tMensaje mensaje)
 {
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	xQueueSendFromISR(objeto->cola, &mensaje, xHigherPriorityTaskWoken);
+	xQueueSend(objeto->cola, &mensaje, portMAX_DELAY);
 }
 
 void objeto_get(tObjeto* objeto, tMensaje* mensaje)

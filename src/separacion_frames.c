@@ -359,6 +359,7 @@ static void sf_rx_isr( void *parametro )
 
 		}
 	}
+	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
 /**

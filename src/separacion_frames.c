@@ -198,7 +198,7 @@ static bool sf_validar_crc8(sf_t* handler)
 		return false;	// Si el caracter de CRC no es válido retorno false
 
 	/* calculo el CRC del paquete*/
-	crc = crc8_calc(0, handler->buffer + INDICE_INICIO_ID, handler->cantidad - CANT_BYTE_FUERA_CRC);
+	crc = crc8_calc(0, handler->buffer + INDICE_INICIO_ID, handler->cantidad - CANT_BYTE_FUERA_CRC); // R_C2_20
 
 	if (crc == CRC_paquete)
 		return true;	// Si el CRC es correcto devuelvo true
@@ -341,7 +341,7 @@ static void sf_rx_isr( void *parametro )
 			mensaje.ptr_datos = handler->buffer + INDICE_INICIO_MENSAJE;
 			mensaje.cantidad = handler->cantidad - LEN_HEADER;
 			// Envío a la cola el mensaje para la capa de aplicación.
-			objeto_post_fromISR(handler->ptr_objeto1, mensaje, &xHigherPriorityTaskWoken);
+			objeto_post_fromISR(handler->ptr_objeto1, mensaje, &xHigherPriorityTaskWoken); // R_C2_22
 			sf_reiniciar_mensaje(handler);
 			//  Pido un bloque de memoria nuevo, en caso de que no haya para la recepción por UART
 			if (!sf_bloque_de_memoria_nuevo(handler))					// R_C2_8
@@ -352,7 +352,7 @@ static void sf_rx_isr( void *parametro )
 			}
 		}
 		else
-			sf_reiniciar_mensaje(handler);			// R_C2_12
+			sf_reiniciar_mensaje(handler);			// R_C2_12 y R_C2_21
 	}
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }

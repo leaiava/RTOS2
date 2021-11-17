@@ -61,9 +61,9 @@ Rutina de interrupción de transmisión: obtiene el mensaje procesado la cola de
 - [x] R_C2_17
 - [x] R_C2_18
 - [x] R_C2_19
-- [ ] R_C2_20
-- [ ] R_C2_21
-- [ ] R_C2_22
+- [x] R_C2_20
+- [x] R_C2_21
+- [x] R_C2_22
 
 ### Requerimientos Capa Aplicación (C3):
 - [ ] R_C3_1

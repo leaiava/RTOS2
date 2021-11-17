@@ -62,6 +62,7 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	handler->ptr_objeto2 = objeto_crear();
 	handler->EOM = false;
 	handler->SOM = false;
+	handler->out_of_memory = false;
 	handler->cantidad = 0;
 
 	//	Reservo memoria para el memory pool
@@ -69,7 +70,8 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	configASSERT(handler->prt_pool != NULL);
 	//	Creo el pool de memoria
 	QMPool_init(&(handler->pool_memoria), handler->prt_pool, POOL_SIZE * sizeof( uint8_t ), MSG_MAX_SIZE);  //Tamaño del segmento de memoria reservado
-
+	//Pido un bloque de memoria
+	sf_bloque_de_memoria_nuevo(handler);
 	uartConfig(handler->uart, handler->baudRate);
 	uartCallbackSet(handler->uart, UART_RECEIVE, sf_rx_isr, handler);
 
@@ -84,7 +86,8 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
     );
 
     configASSERT(handler->timer != NULL);
-
+    // Habilito recepcion por UART.
+    sf_reception_set(handler, RECEPCION_ACTIVADA);
     gpioInit( GPIO0, GPIO_OUTPUT ); // Para debug timer
 	return true;
 }
@@ -263,8 +266,7 @@ static bool sf_paquete_validar(sf_t* handler)
 	
 	if (sf_validar_crc8(handler) && sf_validar_id(handler)) //R_C2_11
 		resp = true;
-	else
-		sf_reiniciar_mensaje(handler);						// R_C2_12
+
 	return resp;
 }
 
@@ -276,12 +278,6 @@ static bool sf_paquete_validar(sf_t* handler)
  */
 bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje)
 {
-	//  Pido un bloque de memoria nuevo, en caso de error termino.
-	if (!sf_bloque_de_memoria_nuevo(handler))		// R_C2_8
-		return false;								// R_C2_9
-
-	sf_reception_set(handler, RECEPCION_ACTIVADA ); // habilito la recepcion por UART.
-
 	objeto_get(handler->ptr_objeto1, ptr_mensaje);
 		return true;
 }
@@ -342,12 +338,22 @@ static void sf_rx_isr( void *parametro )
 	{
 		if (sf_paquete_validar(handler))			// R_C2_10
 		{
-			mensaje.ptr_datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
+			// Cargo puntero con inicio de mensaje para la aplicación
+			mensaje.ptr_datos = handler->buffer + INDICE_INICIO_MENSAJE;
 			mensaje.cantidad = handler->cantidad - LEN_HEADER;
+			// Envío a la cola el mensaje para la capa de aplicación.
 			objeto_post_fromISR(handler->ptr_objeto1, mensaje, &xHigherPriorityTaskWoken);
 			sf_reiniciar_mensaje(handler);
-
+			//  Pido un bloque de memoria nuevo, en caso de que no haya para la recepción por UART
+			if (!sf_bloque_de_memoria_nuevo(handler))					// R_C2_8
+			{
+				// Prendo este flag para indicar que cuando se libere un bloque de memoria se pida uno nuevo y se vuelva a habilitar la recepcion
+				handler->out_of_memory = true;
+				sf_reception_set(handler, RECEPCION_DESACTIVADA ); 		// R_C2_9
+			}
 		}
+		else
+			sf_reiniciar_mensaje(handler);			// R_C2_12
 	}
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
@@ -376,6 +382,16 @@ static void sf_tx_isr( void *parametro )
 		{
 			indice_byte_enviado = 0;
 			sf_bloque_de_memoria_liberar(handler); 			// R_C2_15
+			//Verifico el flag, si se había quedado sin bloque de memoria pido uno ahora que liberé.
+			if(handler->out_of_memory)
+			{
+				if (sf_bloque_de_memoria_nuevo(handler))
+				{
+					// Si consigo el bloque apago el flag y habilito la recepción. De lo contrario no hago nada
+					handler->out_of_memory = false;
+					sf_reception_set(handler, RECEPCION_ACTIVADA );
+				}
+			}
 			handler->mensaje.cantidad = 0;
 			handler->mensaje.ptr_datos = NULL;
 			uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para parar la tx_isr

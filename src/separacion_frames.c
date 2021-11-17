@@ -71,7 +71,8 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	//	Creo el pool de memoria
 	QMPool_init(&(handler->pool_memoria), handler->prt_pool, POOL_SIZE * sizeof( uint8_t ), MSG_MAX_SIZE);  //Tamaño del segmento de memoria reservado
 	//Pido un bloque de memoria
-	sf_bloque_de_memoria_nuevo(handler);
+	configASSERT(sf_bloque_de_memoria_nuevo(handler) == true);
+
 	uartConfig(handler->uart, handler->baudRate);
 	uartCallbackSet(handler->uart, UART_RECEIVE, sf_rx_isr, handler);
 

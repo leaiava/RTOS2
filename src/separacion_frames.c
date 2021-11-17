@@ -291,7 +291,6 @@ bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje)
  */
 void sf_mensaje_procesado_enviar( sf_t* handler, tMensaje mensaje )
 {
-	//Calcular nuevo CRC aqui
 	objeto_post(handler->ptr_objeto2, mensaje);
 	uartCallbackSet(handler->uart, UART_TRANSMITER_FREE, sf_tx_isr, handler);
 	uartSetPendingInterrupt(handler->uart);
@@ -372,6 +371,20 @@ static void sf_tx_isr( void *parametro )
 	if (indice_byte_enviado == 0)
 		{
 			objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive);
+			/* calculo el CRC del nuevo mensaje*/
+			uint8_t crc = crc8_calc(0, handler->mensaje.ptr_datos - LEN_ID, handler->mensaje.cantidad + LEN_ID);
+			// Paso a ascii el primer dígito del CRC
+			uint8_t crc_aux = crc >> 4;
+			if ( crc_aux >= 0 && crc_aux <= 9)
+				handler->mensaje.ptr_datos[handler->mensaje.cantidad] = crc_aux + ASCII_0;
+			else
+				handler->mensaje.ptr_datos[handler->mensaje.cantidad] = crc_aux + ASCII_TO_NUM;
+			// Paso a ascii el segundo dígito del CRC
+			crc &= 0x0F;
+			if ( crc >= 0 && crc <= 9)
+				handler->mensaje.ptr_datos[handler->mensaje.cantidad + 1 ] = crc + ASCII_0;
+			else
+				handler->mensaje.ptr_datos[handler->mensaje.cantidad + 1 ] = crc + ASCII_TO_NUM;
 		}
 	
 	if(handler->mensaje.cantidad != 0)

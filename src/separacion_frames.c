@@ -89,7 +89,7 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
     configASSERT(handler->timer != NULL);
     // Habilito recepcion por UART.
     sf_reception_set(handler, RECEPCION_ACTIVADA);
-    gpioInit( GPIO0, GPIO_OUTPUT ); // Para debug timer
+    
 	return true;
 }
 
@@ -140,8 +140,6 @@ static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 		if (handler->SOM  )
 		{
 			xTimerStartFromISR(handler->timer, &xHigherPriorityTaskWoken);         // R_C2_18
-			gpioWrite(GPIO0, ON);                             // Para debug timer
-
 			handler->buffer[handler->cantidad] = byte_recibido;	// R_C2_6
 			handler->cantidad++;
 			if (byte_recibido == EOM_BYTE)	// R_C2_3
@@ -416,8 +414,6 @@ static void timer_callback(TimerHandle_t xTimer)
     sf_t* handler = (sf_t*)pvTimerGetTimerID(xTimer);
     if (xTimer == handler->timer)                       // R_C2_17
     {
-        gpioWrite(GPIO0, OFF);                          // Para debug timer
-        handler->cantidad = 0;
-        handler->SOM = false;
+        sf_reiniciar_mensaje(handler);
     }
 }

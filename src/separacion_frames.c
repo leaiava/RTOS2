@@ -194,7 +194,7 @@ static bool sf_validar_crc8(sf_t* handler)
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 	if (sf_byte_valido(handler->buffer[handler->cantidad - POS_CRC_L]))
-		CRC_paquete += (sf_decodificar_ascii(handler->buffer[handler->cantidad - POS_CRC_L])) << S_LEFT_4b;
+		CRC_paquete += (sf_decodificar_ascii(handler->buffer[handler->cantidad - POS_CRC_L])) << SHIFT_4b;
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 
@@ -375,17 +375,7 @@ static void sf_tx_isr( void *parametro )
 			/* calculo el CRC del nuevo mensaje*/
 			uint8_t crc = crc8_calc(0, handler->mensaje.ptr_datos - LEN_ID, handler->mensaje.cantidad + LEN_ID);
 			// Paso a ascii el primer dígito del CRC
-			uint8_t crc_aux = crc >> 4;
-			if ( crc_aux >= 0 && crc_aux <= 9)
-				handler->mensaje.ptr_datos[handler->mensaje.cantidad] = crc_aux + ASCII_0;
-			else
-				handler->mensaje.ptr_datos[handler->mensaje.cantidad] = crc_aux + ASCII_TO_NUM;
-			// Paso a ascii el segundo dígito del CRC
-			crc &= 0x0F;
-			if ( crc >= 0 && crc <= 9)
-				handler->mensaje.ptr_datos[handler->mensaje.cantidad + 1 ] = crc + ASCII_0;
-			else
-				handler->mensaje.ptr_datos[handler->mensaje.cantidad + 1 ] = crc + ASCII_TO_NUM;
+			itoa(crc,&(handler->mensaje.ptr_datos[handler->mensaje.cantidad]),16);
 		}
 	
 	if(handler->mensaje.cantidad != 0)

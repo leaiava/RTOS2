@@ -374,8 +374,10 @@ static void sf_tx_isr( void *parametro )
 			objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive);
 			/* calculo el CRC del nuevo mensaje*/
 			uint8_t crc = crc8_calc(0, handler->mensaje.ptr_datos - LEN_ID, handler->mensaje.cantidad + LEN_ID);
-			// Paso a ascii el primer dígito del CRC
+			// Paso a ascii el CRC
 			itoa(crc,&(handler->mensaje.ptr_datos[handler->mensaje.cantidad]),16);
+			// Inserto el EOM
+			handler->mensaje.ptr_datos[handler->mensaje.cantidad + LEN_CRC] = EOM_BYTE;
 		}
 	
 	if(handler->mensaje.cantidad != 0)

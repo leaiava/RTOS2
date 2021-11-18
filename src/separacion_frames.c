@@ -417,6 +417,7 @@ static void timer_callback(TimerHandle_t xTimer)
     if (xTimer == handler->timer)                       // R_C2_17
     {
         gpioWrite(GPIO0, OFF);                          // Para debug timer
-        sf_reiniciar_mensaje(handler);
+        handler->cantidad = 0;
+        handler->SOM = false;
     }
 }

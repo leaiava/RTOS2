@@ -4,8 +4,8 @@
  * 					   Leandro Arrieta <leandroarrieta@gmail.com>
  * All rights reserved.
  * License: Free
- * Date: 12/11/2021
- * Version: v2.0
+ * Date: 19/11/2021
+ * Version: v3.0
  *===========================================================================*/
 
 #include "separacion_frames.h"

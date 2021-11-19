@@ -4,8 +4,8 @@
  * 					   Leandro Arrieta <leandroarrieta@gmail.com>
  * All rights reserved.
  * License: Free
- * Date: 12/11/2021
- * Version: v2.0
+ * Date: 19/11/2021
+ * Version: v3.0
  *===========================================================================*/
 
 #include "separacion_frames.h"
@@ -62,6 +62,7 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	handler->ptr_objeto2 = objeto_crear();
 	handler->EOM = false;
 	handler->SOM = false;
+	handler->out_of_memory = false;
 	handler->cantidad = 0;
 
 	//	Reservo memoria para el memory pool
@@ -69,6 +70,8 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	configASSERT(handler->prt_pool != NULL);
 	//	Creo el pool de memoria
 	QMPool_init(&(handler->pool_memoria), handler->prt_pool, POOL_SIZE * sizeof( uint8_t ), MSG_MAX_SIZE);  //Tamaño del segmento de memoria reservado
+	//Pido un bloque de memoria
+	configASSERT(sf_bloque_de_memoria_nuevo(handler) == true);
 
 	uartConfig(handler->uart, handler->baudRate);
 	uartCallbackSet(handler->uart, UART_RECEIVE, sf_rx_isr, handler);
@@ -84,8 +87,9 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
     );
 
     configASSERT(handler->timer != NULL);
-
-    gpioInit( GPIO0, GPIO_OUTPUT ); // Para debug timer
+    // Habilito recepcion por UART.
+    sf_reception_set(handler, RECEPCION_ACTIVADA);
+    
 	return true;
 }
 
@@ -136,8 +140,6 @@ static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 		if (handler->SOM  )
 		{
 			xTimerStartFromISR(handler->timer, &xHigherPriorityTaskWoken);         // R_C2_18
-			gpioWrite(GPIO0, ON);                             // Para debug timer
-
 			handler->buffer[handler->cantidad] = byte_recibido;	// R_C2_6
 			handler->cantidad++;
 			if (byte_recibido == EOM_BYTE)	// R_C2_3
@@ -190,12 +192,12 @@ static bool sf_validar_crc8(sf_t* handler)
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 	if (sf_byte_valido(handler->buffer[handler->cantidad - POS_CRC_L]))
-		CRC_paquete += (sf_decodificar_ascii(handler->buffer[handler->cantidad - POS_CRC_L])) << S_LEFT_4b;
+		CRC_paquete += (sf_decodificar_ascii(handler->buffer[handler->cantidad - POS_CRC_L])) << SHIFT_4b;
 	else
 		return false;	// Si el caracter de CRC no es válido retorno false
 
 	/* calculo el CRC del paquete*/
-	crc = crc8_calc(0, handler->buffer + INDICE_INICIO_ID, handler->cantidad - CANT_BYTE_FUERA_CRC);
+	crc = crc8_calc(0, handler->buffer + INDICE_INICIO_ID, handler->cantidad - CANT_BYTE_FUERA_CRC); // R_C2_20
 
 	if (crc == CRC_paquete)
 		return true;	// Si el CRC es correcto devuelvo true
@@ -263,8 +265,7 @@ static bool sf_paquete_validar(sf_t* handler)
 	
 	if (sf_validar_crc8(handler) && sf_validar_id(handler)) //R_C2_11
 		resp = true;
-	else
-		sf_reiniciar_mensaje(handler);						// R_C2_12
+
 	return resp;
 }
 
@@ -276,12 +277,6 @@ static bool sf_paquete_validar(sf_t* handler)
  */
 bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje)
 {
-	//  Pido un bloque de memoria nuevo, en caso de error termino.
-	if (!sf_bloque_de_memoria_nuevo(handler))		// R_C2_8
-		return false;								// R_C2_9
-
-	sf_reception_set(handler, RECEPCION_ACTIVADA ); // habilito la recepcion por UART.
-
 	objeto_get(handler->ptr_objeto1, ptr_mensaje);
 		return true;
 }
@@ -295,7 +290,6 @@ bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje)
  */
 void sf_mensaje_procesado_enviar( sf_t* handler, tMensaje mensaje )
 {
-	//Calcular nuevo CRC aqui
 	objeto_post(handler->ptr_objeto2, mensaje);
 	uartCallbackSet(handler->uart, UART_TRANSMITER_FREE, sf_tx_isr, handler);
 	uartSetPendingInterrupt(handler->uart);
@@ -342,12 +336,22 @@ static void sf_rx_isr( void *parametro )
 	{
 		if (sf_paquete_validar(handler))			// R_C2_10
 		{
-			mensaje.ptr_datos = handler->buffer + INDICE_INICIO_MENSAJE; // Cargo puntero con inicio de mensaje para la aplicación
+			// Cargo puntero con inicio de mensaje para la aplicación
+			mensaje.ptr_datos = handler->buffer + INDICE_INICIO_MENSAJE;
 			mensaje.cantidad = handler->cantidad - LEN_HEADER;
-			objeto_post_fromISR(handler->ptr_objeto1, mensaje, &xHigherPriorityTaskWoken);
+			// Envío a la cola el mensaje para la capa de aplicación.
+			objeto_post_fromISR(handler->ptr_objeto1, mensaje, &xHigherPriorityTaskWoken); // R_C2_22
 			sf_reiniciar_mensaje(handler);
-
+			//  Pido un bloque de memoria nuevo, en caso de que no haya para la recepción por UART
+			if (!sf_bloque_de_memoria_nuevo(handler))					// R_C2_8
+			{
+				// Prendo este flag para indicar que cuando se libere un bloque de memoria se pida uno nuevo y se vuelva a habilitar la recepcion
+				handler->out_of_memory = true;
+				sf_reception_set(handler, RECEPCION_DESACTIVADA ); 		// R_C2_9
+			}
 		}
+		else
+			sf_reiniciar_mensaje(handler);			// R_C2_12 y R_C2_21
 	}
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
@@ -366,6 +370,12 @@ static void sf_tx_isr( void *parametro )
 	if (indice_byte_enviado == 0)
 		{
 			objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive);
+			/* calculo el CRC del nuevo mensaje*/
+			uint8_t crc = crc8_calc(0, handler->mensaje.ptr_datos - LEN_ID, handler->mensaje.cantidad + LEN_ID);
+			// Paso a ascii el CRC
+			itoa(crc,&(handler->mensaje.ptr_datos[handler->mensaje.cantidad]),16);
+			// Inserto el EOM
+			handler->mensaje.ptr_datos[handler->mensaje.cantidad + LEN_CRC] = EOM_BYTE;
 		}
 	
 	if(handler->mensaje.cantidad != 0)
@@ -376,6 +386,16 @@ static void sf_tx_isr( void *parametro )
 		{
 			indice_byte_enviado = 0;
 			sf_bloque_de_memoria_liberar(handler); 			// R_C2_15
+			//Verifico el flag, si se había quedado sin bloque de memoria pido uno ahora que liberé.
+			if(handler->out_of_memory)
+			{
+				if (sf_bloque_de_memoria_nuevo(handler))
+				{
+					// Si consigo el bloque apago el flag y habilito la recepción. De lo contrario no hago nada
+					handler->out_of_memory = false;
+					sf_reception_set(handler, RECEPCION_ACTIVADA );
+				}
+			}
 			handler->mensaje.cantidad = 0;
 			handler->mensaje.ptr_datos = NULL;
 			uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para parar la tx_isr
@@ -394,8 +414,6 @@ static void timer_callback(TimerHandle_t xTimer)
     sf_t* handler = (sf_t*)pvTimerGetTimerID(xTimer);
     if (xTimer == handler->timer)                       // R_C2_17
     {
-        gpioWrite(GPIO0, OFF);                          // Para debug timer
-        handler->cantidad = 0;
-        handler->SOM = false;
+        sf_reiniciar_mensaje(handler);
     }
 }

@@ -52,7 +52,7 @@ int main(void)
 		0								 // Puntero a la tarea creada en el sistema
 	);
 
-	configASSERT(res = pdPASS);
+	configASSERT(res == pdPASS);
 
     vTaskStartScheduler();
 

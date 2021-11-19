@@ -36,7 +36,7 @@
 #define POS_CRC_H               2
 #define POS_CRC_L               3
 
-#define S_LEFT_4b               4 // SHIFT LEFT 4BITS
+#define SHIFT_4b               4 // SHIFT LEFT 4BITS
 
 #define ASCII_TO_NUM            55
 

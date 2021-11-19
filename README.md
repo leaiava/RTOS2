@@ -1,4 +1,4 @@
-# RTOS2 v2.0
+# RTOS2 v3.0
 Repositorio para el Trabajo Práctico de la asignatura Sistemas Operativos en Tiempo Real 2 de la Carrera de Especialización en Sistemas Embebidos.
 
 # Miembros del grupo 3
@@ -61,9 +61,9 @@ Rutina de interrupción de transmisión: obtiene el mensaje procesado la cola de
 - [x] R_C2_17
 - [x] R_C2_18
 - [x] R_C2_19
-- [ ] R_C2_20
-- [ ] R_C2_21
-- [ ] R_C2_22
+- [x] R_C2_20
+- [x] R_C2_21
+- [x] R_C2_22
 
 ### Requerimientos Capa Aplicación (C3):
 - [ ] R_C3_1

@@ -25,6 +25,7 @@ typedef struct
     uint32_t cantidad;                     ///< Cantidad de bytes recibidos.    
     bool SOM;                              ///< Flag para indicar si llego el SOM.
     bool EOM;                              ///< Flag para indicar si llego el EOM.
+    bool out_of_memory;                    ///< Indica que se quedo sin bloque de memoria.
     tObjeto *ptr_objeto1;                  ///< Puntero al objeto usado para enviar el mensaje del driver a la aplicacion.
     tObjeto *ptr_objeto2;                  ///< Puntero al objeto usado para enviar el mensaje de la aplicacion al driver.
     tMensaje mensaje;                      ///< Mensaje a recibirse a través del objeto.

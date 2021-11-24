@@ -15,6 +15,8 @@
 #include "queue.h"
 #include "sapi.h"
 #include "separacion_frames.h"
+#include "app.h"
+
 /*==================[definiciones y macros]==================================*/
 #define UART_USED	UART_USB
 #define BAUD_RATE	115200
@@ -24,7 +26,7 @@
 /*==================[definiciones de datos externos]=========================*/
 
 /*==================[declaraciones de funciones internas]====================*/
-void tarea_principal(void* pvParameters);
+
 void error_handler();
 /*==================[declaraciones de funciones externas]====================*/
 
@@ -44,8 +46,8 @@ int main(void)
     BaseType_t res;
 
 	res = xTaskCreate(
-		tarea_principal,				 // Funcion de la tarea a ejecutar
-		(const char *)"tarea_principal", // Nombre de la tarea como String amigable para el usuario
+		task_app,						 // Funcion de la tarea a ejecutar
+		(const char *)"task_app", 		 // Nombre de la tarea como String amigable para el usuario
 		configMINIMAL_STACK_SIZE * 2,	 // Cantidad de stack de la tarea
 		ptr_sf,							 // Parametros de tarea
 		tskIDLE_PRIORITY + 1,			 // Prioridad de la tarea
@@ -60,23 +62,6 @@ int main(void)
     return 0;
 }
 /*==================[definiciones de funciones internas]=====================*/
-
-void tarea_principal(void* pvParameters)
-{
-	sf_t* handler = (sf_t*)pvParameters;
-	tMensaje mensaje;
-	while(TRUE)
-	{
-		if(!sf_mensaje_recibir(handler, &mensaje))
-			error_handler();
-		// validar mensaje recibido
-
-		// Procesar mensaje
-		sf_mensaje_procesado_enviar(handler, mensaje);
-	}
-}
-
-
 
 /**
  * @brief	Manejo de errores

@@ -242,21 +242,9 @@ static bool app_procesar_mensaje(app_t* handler_app)
  */
 static void app_insertar_mensaje_error(app_t* handler_app)      // R_C3_13
 {
-    handler_app->mensaje.ptr_datos[0] = 'E';    
-    switch ( handler_app->error_type )
-    {
-    case ERROR_INVALID_DATA:
-        handler_app->mensaje.ptr_datos[1] = '0'; 
-        handler_app->mensaje.ptr_datos[2] = '0';
-        handler_app->mensaje.cantidad = 3;
-        break;
-    
-    case ERROR_INVALID_OPCODE:
-        handler_app->mensaje.ptr_datos[1] = '0'; 
-        handler_app->mensaje.ptr_datos[2] = '1';
-        handler_app->mensaje.cantidad = 3;
-        break;
-    default:
-        break;
-    }
+    uint8_t pos = 0;
+    handler_app->mensaje.ptr_datos[pos++] = 'E';   
+    handler_app->mensaje.ptr_datos[pos++] = '0';  
+    handler_app->mensaje.ptr_datos[pos++] = handler_app->error_type + '0';
+    handler_app->mensaje.cantidad = 3;
 }

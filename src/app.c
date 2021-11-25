@@ -129,7 +129,7 @@ static bool app_extraer_palabras(app_t* handler_app)
         else
         {
             handler_app->error_type = ERROR_INVALID_DATA;
-            //app_inicializar_array_palabras(handler_app);
+            app_inicializar_array_palabras(handler_app);
             return false;
         }
         /* Si llegue a la cantidad máxima de palabras o caracteres, marco el error y salgo*/

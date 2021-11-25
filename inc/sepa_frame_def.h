@@ -17,7 +17,7 @@
 #define INDICE_INICIO_MENSAJE   5       // El mensaje para la aplicación comienza en el 5to byte
 #define INDICE_INICIO_ID        1
 #define CANT_BYTE_FUERA_CRC     4
-#define POOL_SIZE               1000
+#define POOL_SIZE               5000
 #define RECEPCION_ACTIVADA      true
 #define RECEPCION_DESACTIVADA   false
 

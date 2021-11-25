@@ -369,11 +369,25 @@ static void sf_tx_isr( void *parametro )
 
 	if (indice_byte_enviado == 0)
 		{
-			objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive);
+			if (objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive) == pdFALSE)
+			{
+				uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para parar la tx_isr
+				return;
+			}
 			/* calculo el CRC del nuevo mensaje*/
 			uint8_t crc = crc8_calc(0, handler->mensaje.ptr_datos - LEN_ID, handler->mensaje.cantidad + LEN_ID);
-			// Paso a ascii el CRC
-			itoa(crc,&(handler->mensaje.ptr_datos[handler->mensaje.cantidad]),16);
+			// Paso a ascii el primer dígito del CRC
+			uint8_t crc_aux = crc >> 4;
+			if ( crc_aux >= 0 && crc_aux <= 9)
+				handler->mensaje.ptr_datos[handler->mensaje.cantidad] = crc_aux + ASCII_0;
+			else
+				handler->mensaje.ptr_datos[handler->mensaje.cantidad] = crc_aux + ASCII_TO_NUM;
+			// Paso a ascii el segundo dígito del CRC
+			crc &= 0x0F;
+			if ( crc >= 0 && crc <= 9)
+				handler->mensaje.ptr_datos[handler->mensaje.cantidad + 1 ] = crc + ASCII_0;
+			else
+				handler->mensaje.ptr_datos[handler->mensaje.cantidad + 1 ] = crc + ASCII_TO_NUM;
 			// Inserto el EOM
 			handler->mensaje.ptr_datos[handler->mensaje.cantidad + LEN_CRC] = EOM_BYTE;
 		}
@@ -398,7 +412,6 @@ static void sf_tx_isr( void *parametro )
 			}
 			handler->mensaje.cantidad = 0;
 			handler->mensaje.ptr_datos = NULL;
-			uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para parar la tx_isr
 		}
 	}
 	portYIELD_FROM_ISR( xTaskWokenByReceive );

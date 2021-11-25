@@ -37,7 +37,7 @@ tObjeto* objeto_crear();
 void objeto_post( tObjeto* objeto,tMensaje mensaje );
 void objeto_post_fromISR( tObjeto* objeto,tMensaje mensaje, BaseType_t *pxHigherPriorityTaskWoken );
 void objeto_get( tObjeto* objeto,tMensaje* mensaje );
-void objeto_get_fromISR( tObjeto* objeto,tMensaje* mensaje, BaseType_t *pxHigherPriorityTaskWoken );
+bool objeto_get_fromISR( tObjeto* objeto,tMensaje* mensaje, BaseType_t *pxHigherPriorityTaskWoken );
 void objeto_borrar( tObjeto* objeto);
 
 #endif /* OBJETO_H_ */

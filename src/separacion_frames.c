@@ -369,7 +369,11 @@ static void sf_tx_isr( void *parametro )
 
 	if (indice_byte_enviado == 0)
 		{
-			objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive);
+			if (objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive) == 0)
+			{
+				uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para parar la tx_isr
+				return;
+			}
 			/* calculo el CRC del nuevo mensaje*/
 			uint8_t crc = crc8_calc(0, handler->mensaje.ptr_datos - LEN_ID, handler->mensaje.cantidad + LEN_ID);
 			// Paso a ascii el primer dígito del CRC
@@ -408,7 +412,6 @@ static void sf_tx_isr( void *parametro )
 			}
 			handler->mensaje.cantidad = 0;
 			handler->mensaje.ptr_datos = NULL;
-			uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para parar la tx_isr
 		}
 	}
 	portYIELD_FROM_ISR( xTaskWokenByReceive );

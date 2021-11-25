@@ -55,9 +55,9 @@ void objeto_get(tObjeto* objeto, tMensaje* mensaje)
     xQueueReceive(objeto->cola, mensaje, portMAX_DELAY);
 }
 
-void objeto_get_fromISR( tObjeto* objeto,tMensaje* mensaje, BaseType_t *pxHigherPriorityTaskWoken )
+bool objeto_get_fromISR( tObjeto* objeto,tMensaje* mensaje, BaseType_t *pxHigherPriorityTaskWoken )
 {
-	xQueueReceiveFromISR(objeto->cola, mensaje, pxHigherPriorityTaskWoken );
+	return xQueueReceiveFromISR(objeto->cola, mensaje, pxHigherPriorityTaskWoken );
 }
 
 void objeto_borrar(tObjeto* objeto)

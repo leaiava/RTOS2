@@ -282,4 +282,5 @@ static void app_insertar_mensaje_error(app_t* handler_app)      // R_C3_13
     handler_app->mensaje.ptr_datos[pos++] = '0';  
     handler_app->mensaje.ptr_datos[pos++] = handler_app->error_type + '0';
     handler_app->mensaje.cantidad = 3;
+    handler_app->error_type = SIN_ERROR;
 }

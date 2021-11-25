@@ -13,6 +13,7 @@
 static bool app_extraer_palabras(app_t* handler_app);
 static bool app_procesar_mensaje(app_t* handler_app);
 static void app_insertar_mensaje_error(app_t* handler_app);  
+static void app_inicializar_array_palabras(app_t* handler_app);
 
 void task_app(void* pvParameters)
 {
@@ -57,11 +58,8 @@ app_t* app_crear(void)
 void app_init(app_t* handler_app)
 {
     /* Inicio las palabras en cero */
-    for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
-        for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
-        {
-            handler_app->palabras[i][j] = 0;
-        }
+    app_inicializar_array_palabras(handler_app);
+    
     handler_app->error_type = SIN_ERROR;
 }
 
@@ -118,6 +116,7 @@ static bool app_extraer_palabras(app_t* handler_app)
             if (handler_app->mensaje.ptr_datos[i] == handler_app->mensaje.ptr_datos[i+1])
                 {
                     handler_app->error_type = ERROR_INVALID_DATA;
+                    app_inicializar_array_palabras(handler_app);
                     return false;
                 }            
             /* Si el caracter es el inicial no tengo que saltar de palabra.*/
@@ -131,12 +130,14 @@ static bool app_extraer_palabras(app_t* handler_app)
         else
         {
             handler_app->error_type = ERROR_INVALID_DATA;
+            app_inicializar_array_palabras(handler_app);
             return false;
         }
         /* Si llegue a la cantidad máxima de palabras o caracteres, marco el error y salgo*/
         if ( (caracter > CANT_LETRAS_MAX) || (palabra > CANT_PALABRAS_MAX))
         {
             handler_app->error_type = ERROR_INVALID_DATA;
+            app_inicializar_array_palabras(handler_app);
             return false;
         }
 
@@ -246,11 +247,27 @@ static bool app_procesar_mensaje(app_t* handler_app)
         default:                                                // R_C3_6 - R_C3_11
         {
             handler_app->error_type = ERROR_INVALID_OPCODE;
+            app_inicializar_array_palabras(handler_app);
             return false;            
         }
         
     }
     return true;
+}
+
+/**
+ * @brief Pone en cero el array de palabras
+ *          Se la llama al iniciar y si aparece un ERROR_INVALID_DATA para que no queden datos corruptos
+ * 
+ * @param handler_app 
+ */
+static void app_inicializar_array_palabras(app_t* handler_app)
+{
+    for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
+        for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
+        {
+            handler_app->palabras[i][j] = 0;
+        }
 }
 
 /**

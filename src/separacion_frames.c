@@ -369,7 +369,7 @@ static void sf_tx_isr( void *parametro )
 
 	if (indice_byte_enviado == 0)
 		{
-			if (objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive) == 0)
+			if (objeto_get_fromISR(handler->ptr_objeto2, &handler->mensaje, &xTaskWokenByReceive) == pdFALSE)
 			{
 				uartCallbackClr(handler->uart, UART_TRANSMITER_FREE); //Elimino el callback para parar la tx_isr
 				return;

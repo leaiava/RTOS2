@@ -92,17 +92,26 @@ static bool app_extraer_palabras(app_t* handler_app)
     for ( uint32_t i = INDICE_CAMPO_DATOS; i < handler_app->mensaje.cantidad ; i++)
     {
         
-        /* Si el caracter está en mayuscula lo paso a minúscula */
-        if ( ('A' <= handler_app->mensaje.ptr_datos[i]) && ( handler_app->mensaje.ptr_datos[i]<= 'Z'))     // R_C3_7
-            handler_app->mensaje.ptr_datos[i] += A_MINUSCULA;
         
-        /* Copio el caracter al array de palabras*/ 
-        if ( ('a' <= handler_app->mensaje.ptr_datos[i]) && (handler_app->mensaje.ptr_datos[i] <= 'z'))     // R_C3_7
+        if ( ('A' <= handler_app->mensaje.ptr_datos[i]) && ( handler_app->mensaje.ptr_datos[i]<= 'Z'))          // R_C3_7
+            {
+                /* Si es la primer palabra, primer caracter, no cambio de palabra */
+                if ((palabra != PALABRA_INICIAL) || (caracter != CARACTER_INICIAL))
+                {
+                    palabra++;                   // incrementeo para cambiar de palabra
+                    caracter = CARACTER_INICIAL; // cambio al caracter inicial de la palabra.
+                }
+                 /* Guardo todas las palabras en minúscula*/
+                handler_app->palabras[palabra][caracter] = handler_app->mensaje.ptr_datos[i] + A_MINUSCULA;
+                caracter++;                  // Avanzo un caracter para la próxima iteración.
+            }
+        /* Si el caracter está en minúscula copio el caracter al array de palabras*/ 
+        else if ( ('a' <= handler_app->mensaje.ptr_datos[i]) && (handler_app->mensaje.ptr_datos[i] <= 'z'))     // R_C3_7
         {
             handler_app->palabras[palabra][caracter] = handler_app->mensaje.ptr_datos[i];
-            caracter++;    
+            caracter++;                     // Avanzo un caracter para la próxima iteración.
         }
-        /* Si el carcter era guion bajo o espacio cambio de palabra*/ 
+        /* Si el caracter era guion bajo o espacio cambio de palabra*/ 
         else if ( (handler_app->mensaje.ptr_datos[i] == '_' ) || (handler_app->mensaje.ptr_datos[i] == ' ' ) )
         {
             /* Si hay 2 guiones bajos o espacios seguidos salgo con error*/             // R_C3_8
@@ -111,12 +120,21 @@ static bool app_extraer_palabras(app_t* handler_app)
                     handler_app->error_type = ERROR_INVALID_DATA;
                     return false;
                 }            
-            
-            palabra++;                   // incrementeo para cambiar de palabra
-            caracter = CARACTER_INICIAL; // cambio al caracter inicial de la palabra.
+            /* Si el caracter es el inicial no tengo que saltar de palabra.*/
+            if (caracter != CARACTER_INICIAL)
+            {
+                palabra++;                   // incrementeo para cambiar de palabra
+                caracter = CARACTER_INICIAL; // cambio al caracter inicial de la palabra.
+            }
         }
-        /* Si no era un carcter, o guion bajo o espacio, marco el error y salgo*/
+        /* Si no era un caracter, o guion bajo o espacio, marco el error y salgo*/
         else
+        {
+            handler_app->error_type = ERROR_INVALID_DATA;
+            return false;
+        }
+        /* Si llegue a la cantidad máxima de palabras o caracteres, marco el error y salgo*/
+        if ( (caracter > CANT_LETRAS_MAX) || (palabra > CANT_PALABRAS_MAX))
         {
             handler_app->error_type = ERROR_INVALID_DATA;
             return false;

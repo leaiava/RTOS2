@@ -15,7 +15,6 @@
 #include <string.h>
 #include "sepa_frame_def.h"
 
-static bool sf_reception_set(sf_t* handler, bool set_int);
 static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido);
 static bool sf_paquete_validar(sf_t* handler);
 static bool sf_validar_id(sf_t* handler);

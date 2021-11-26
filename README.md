@@ -1,4 +1,4 @@
-# RTOS2 v3.0
+# RTOS2 v4.0
 Repositorio para el Trabajo Práctico de la asignatura Sistemas Operativos en Tiempo Real 2 de la Carrera de Especialización en Sistemas Embebidos.
 
 # Miembros del grupo 3

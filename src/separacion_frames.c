@@ -5,7 +5,7 @@
  * All rights reserved.
  * License: Free
  * Date: 19/11/2021
- * Version: v3.0
+ * Version: v4.0
  *===========================================================================*/
 
 #include "separacion_frames.h"

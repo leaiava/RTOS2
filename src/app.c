@@ -95,6 +95,13 @@ static bool app_extraer_palabras(app_t* handler_app)
                 /* Si no es la primer palabra o el primer carácter, cambio de palabra. */
                 if ((caracter != CARACTER_INICIAL))
                 {
+                    /* Verifico que la palabra tenga la cantidad de letras mínimas*/    // R_C3_4
+                    if (caracter < CANT_LETRAS_MIN)
+                    {
+                        handler_app->error_type = ERROR_INVALID_DATA;
+                        app_inicializar_array_palabras(handler_app);
+                        return false;
+                    }
                     palabra++;                   // Incremento para cambiar de palabra.
                     caracter = CARACTER_INICIAL; // Cambio al caracter inicial de la palabra.
                 }
@@ -121,6 +128,13 @@ static bool app_extraer_palabras(app_t* handler_app)
             /* Si el caracter no es el inicial salto de palabra.*/
             if (caracter != CARACTER_INICIAL)
             {
+                /* Verifico que la palabra tenga la cantidad de letras mínimas*/    // R_C3_4
+                if (caracter < CANT_LETRAS_MIN)
+                {
+                    handler_app->error_type = ERROR_INVALID_DATA;
+                    app_inicializar_array_palabras(handler_app);
+                    return false;
+                }
                 palabra++;                   // Incremento para cambiar de palabra.
                 caracter = CARACTER_INICIAL; // Cambio al caracter inicial de la palabra.
             }
@@ -140,6 +154,14 @@ static bool app_extraer_palabras(app_t* handler_app)
             return false;
         }
     }
+    /* Verifico que la  cantidad de palabras que llegaron se mayor que las mínimas definidas.*/ // R_C3_2
+    if (palabra < CANT_PALABRAS_MIN -1)
+        {
+            handler_app->error_type = ERROR_INVALID_DATA;
+            app_inicializar_array_palabras(handler_app);
+            return false;
+        }
+        
     return true;
 }
 

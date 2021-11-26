@@ -86,30 +86,29 @@ static bool app_extraer_palabras(app_t* handler_app)
             return false;
         }
 
-    /* recorro todo el mensaje para extrer las palabras y verifico que los caracteres sean válidos.*/ 
+    /* Recorro todo el mensaje para extraer las palabras y verifico que los caracteres sean válidos. */
     for ( uint32_t i = INDICE_CAMPO_DATOS; i < handler_app->mensaje.cantidad ; i++)
     {
-        
-        
+        /* Si el caracter está entre 'A' y 'Z' lo convierto a minúscula y lo copio en el array de palabras. */
         if ( ('A' <= handler_app->mensaje.ptr_datos[i]) && ( handler_app->mensaje.ptr_datos[i]<= 'Z'))          // R_C3_7
             {
-                /* Si es la primer palabra, primer caracter, no cambio de palabra */
-                if ((palabra != PALABRA_INICIAL) || (caracter != CARACTER_INICIAL))
+                /* Si no es la primer palabra o el primer carácter, cambio de palabra. */
+                if ((caracter != CARACTER_INICIAL))
                 {
-                    palabra++;                   // incrementeo para cambiar de palabra
-                    caracter = CARACTER_INICIAL; // cambio al caracter inicial de la palabra.
+                    palabra++;                   // Incremento para cambiar de palabra.
+                    caracter = CARACTER_INICIAL; // Cambio al caracter inicial de la palabra.
                 }
-                 /* Guardo todas las palabras en minúscula*/
+                /* Guardo caracter en minúscula. */
                 handler_app->palabras[palabra][caracter] = handler_app->mensaje.ptr_datos[i] + A_MINUSCULA;
                 caracter++;                  // Avanzo un caracter para la próxima iteración.
             }
-        /* Si el caracter está en minúscula copio el caracter al array de palabras*/ 
+        /* Si el caracter está entre 'a' y 'z' lo copio al array de palabras. */ 
         else if ( ('a' <= handler_app->mensaje.ptr_datos[i]) && (handler_app->mensaje.ptr_datos[i] <= 'z'))     // R_C3_7
         {
             handler_app->palabras[palabra][caracter] = handler_app->mensaje.ptr_datos[i];
             caracter++;                     // Avanzo un caracter para la próxima iteración.
         }
-        /* Si el caracter era guion bajo o espacio cambio de palabra*/ 
+        /* Si el caracter es guion bajo o espacio cambio de palabra. */ 
         else if ( (handler_app->mensaje.ptr_datos[i] == '_' ) || (handler_app->mensaje.ptr_datos[i] == ' ' ) )
         {
             /* Si hay 2 guiones bajos o espacios seguidos salgo con error*/             // R_C3_8
@@ -119,14 +118,14 @@ static bool app_extraer_palabras(app_t* handler_app)
                     app_inicializar_array_palabras(handler_app);
                     return false;
                 }            
-            /* Si el caracter es el inicial no tengo que saltar de palabra.*/
+            /* Si el caracter no es el inicial salto de palabra.*/
             if (caracter != CARACTER_INICIAL)
             {
-                palabra++;                   // incrementeo para cambiar de palabra
-                caracter = CARACTER_INICIAL; // cambio al caracter inicial de la palabra.
+                palabra++;                   // Incremento para cambiar de palabra.
+                caracter = CARACTER_INICIAL; // Cambio al caracter inicial de la palabra.
             }
         }
-        /* Si no era un caracter, o guion bajo o espacio, marco el error y salgo*/
+        /* Si no era un caracter, o guion bajo o espacio, marco el error y salgo. */
         else
         {
             handler_app->error_type = ERROR_INVALID_DATA;
@@ -134,13 +133,12 @@ static bool app_extraer_palabras(app_t* handler_app)
             return false;
         }
         /* Si llegue a la cantidad máxima de palabras o caracteres, marco el error y salgo*/
-        if ( (caracter > CANT_LETRAS_MAX) || (palabra > CANT_PALABRAS_MAX))
+        if ( (caracter > CANT_LETRAS_MAX) || (palabra == CANT_PALABRAS_MAX))
         {
             handler_app->error_type = ERROR_INVALID_DATA;
             app_inicializar_array_palabras(handler_app);
             return false;
         }
-
     }
     return true;
 }

@@ -89,7 +89,7 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
     configASSERT(handler->timer != NULL);
     // Habilito recepcion por UART.
     sf_reception_set(handler, RECEPCION_ACTIVADA);
-    
+
 	return true;
 }
 
@@ -330,6 +330,9 @@ static void sf_rx_isr( void *parametro )
 	tMensaje mensaje;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
+	if(handler->buffer == NULL)
+		return;
+	
 	uint8_t byte_recibido = uartRxRead( handler->uart ); // Leo byte de la UART con sAPI
 
 	if (sf_recibir_byte(handler, byte_recibido))	// R_C2_5 Proceso el byte en contexto de interrupcion, si llego EOM devuelve true, sino devuelve false
@@ -347,7 +350,7 @@ static void sf_rx_isr( void *parametro )
 			{
 				// Prendo este flag para indicar que cuando se libere un bloque de memoria se pida uno nuevo y se vuelva a habilitar la recepcion
 				handler->out_of_memory = true;
-				sf_reception_set(handler, RECEPCION_DESACTIVADA ); 		// R_C2_9
+				uartCallbackClr(handler->uart, UART_RECEIVE); 			// R_C2_9
 			}
 		}
 		else
@@ -407,7 +410,7 @@ static void sf_tx_isr( void *parametro )
 				{
 					// Si consigo el bloque apago el flag y habilito la recepción. De lo contrario no hago nada
 					handler->out_of_memory = false;
-					sf_reception_set(handler, RECEPCION_ACTIVADA );
+					uartCallbackSet(handler->uart, UART_RECEIVE, sf_rx_isr, handler);
 				}
 			}
 			handler->mensaje.cantidad = 0;

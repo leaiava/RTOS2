@@ -87,29 +87,10 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
     );
 
     configASSERT(handler->timer != NULL);
-    // Habilito recepcion por UART.
-    sf_reception_set(handler, RECEPCION_ACTIVADA);
+    // Habilito interrupciónes de UART
+    uartInterrupt(handler->uart, UART_IE);
 
 	return true;
-}
-
-/**
- * @brief Activa o desactiva la recepcion de frames segun la bandera de interrupción que maneja el puerto serie.
- * 
- * @param[in] handler Puntero a la estructura de separación de frames. 
- * @param[in] set_int Activar o Desactivar.
- * 
- * @return true  Cuando fue todo correcto. 
- * @return false Cuando los punteros no cumplen con tener sector de memoria.
- */
-static bool sf_reception_set(sf_t* handler, bool set_int)
-{
-	bool resp = false;
-	if(handler != NULL){
-		uartInterrupt(handler->uart, set_int);
-		resp = true;
-	}
-	return(resp);
 }
 
 /**

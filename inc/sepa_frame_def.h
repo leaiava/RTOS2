@@ -18,8 +18,7 @@
 #define INDICE_INICIO_ID        1
 #define CANT_BYTE_FUERA_CRC     4
 #define POOL_SIZE               5000
-#define RECEPCION_ACTIVADA      true
-#define RECEPCION_DESACTIVADA   false
+#define UART_IE                 true
 
 #define ASCII_9                 '9'
 #define ASCII_0                 '0'

@@ -32,10 +32,10 @@ void task_app(void* pvParameters);
 
 typedef struct 
 {
-    uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
+	uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
     uint8_t error_type;                                    ///> Variable para guardar el tipo de error en el mensaje
     tMensaje mensaje;                                      ///> Variable para recibir el mensaje
+    sf_t* handler_sf;                                      ///> Handler para la capa de separación de frame
 } app_t;
 
-app_t* app_crear(void);
-void app_init(app_t* handler);
+bool app_crear(app_t* handler_app , sf_t* handler_sf);

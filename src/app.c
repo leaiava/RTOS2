@@ -17,15 +17,11 @@ static void app_inicializar_array_palabras(app_t* handler_app);
 
 void task_app(void* pvParameters)
 {
-	sf_t* handler = (sf_t*)pvParameters;
-	app_t* ptr_app;
-
-    ptr_app = app_crear();
-    app_init(ptr_app);
+	app_t* ptr_app = pvParameters;
 
 	while(TRUE)
 	{
-		sf_mensaje_recibir(handler, &ptr_app->mensaje );
+		sf_mensaje_recibir( ptr_app->handler_sf , &(ptr_app->mensaje) );
 		
         if (app_extraer_palabras(ptr_app) == 0)
             app_insertar_mensaje_error(ptr_app);    // Si salió con error, inserto el mensaje de error para ser enviado
@@ -34,34 +30,48 @@ void task_app(void* pvParameters)
             app_insertar_mensaje_error(ptr_app);    // Si salió con error, inserto el mensaje de error para ser enviado
 
         /* Envío el mensaje*/
-		sf_mensaje_procesado_enviar(handler, ptr_app->mensaje );
+		sf_mensaje_procesado_enviar(ptr_app->handler_sf, ptr_app->mensaje );
 	}
 }
 
 /**
- * @brief Asigna memoria para una estructura de app y devuelve puntero a ella. 
+ * @brief Asigna memoria para una estructura de app, la inicializa y crea la tarea.
  * 
- * @return app_t* 
+ * @param handler_app   Puntero del tipo app_t
+ * @param handler_sf    Puntero del tipo sf_t, requiere que este inicializado.
+ * @return true     Si salio todo bien
+ * @return false    Si hubo un problema
  */
-app_t* app_crear(void)
+bool app_crear(app_t* handler_app , sf_t* handler_sf)
 {
-	app_t* me = pvPortMalloc(sizeof(app_t));
-	configASSERT(me != NULL);
-	return me;
-} 
+	if ( handler_sf != NULL )
+    {
+        handler_app = pvPortMalloc(sizeof(app_t));
+        configASSERT(handler_app != NULL);
+        
+        handler_app->handler_sf = handler_sf;
+        handler_app->error_type = SIN_ERROR;
+        
+        /* Inicio las palabras en cero */
+        app_inicializar_array_palabras(handler_app);
 
-/**
- * @brief Inicializa la estructura app
- * 
- * @param handler_app 
- */
-void app_init(app_t* handler_app)
-{
-    /* Inicio las palabras en cero */
-    app_inicializar_array_palabras(handler_app);
-    
-    handler_app->error_type = SIN_ERROR;
-}
+        BaseType_t res;
+
+        res = xTaskCreate(
+            task_app,						 // Funcion de la tarea a ejecutar
+            (const char *)"task_app", 		 // Nombre de la tarea como String amigable para el usuario
+            configMINIMAL_STACK_SIZE * 2,	 // Cantidad de stack de la tarea
+            handler_app,				 // Parametros de tarea
+            tskIDLE_PRIORITY + 1,			 // Prioridad de la tarea
+            0								 // Puntero a la tarea creada en el sistema
+        );
+
+        configASSERT(res == pdPASS);
+        
+        return true;
+    }
+    return false;
+} 
 
 /**
  * @brief Extrae las palabras del mensaje y las guarda en la estructura app_t

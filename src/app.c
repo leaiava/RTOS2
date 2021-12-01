@@ -14,7 +14,9 @@ static bool app_extraer_palabras(app_t* handler_app);
 static bool app_procesar_mensaje(app_t* handler_app);
 static void app_insertar_mensaje_error(app_t* handler_app);  
 static void app_inicializar_array_palabras(app_t* handler_app);
-
+static void app_camelCase(app_t* handler_app);
+static void app_PascalCase(app_t* handler_app);
+static void app_snake_case(app_t* handler_app);
 void task_app(void* pvParameters)
 {
 	app_t* ptr_app = pvParameters;
@@ -185,9 +187,67 @@ static bool app_extraer_palabras(app_t* handler_app)
  */
 static bool app_procesar_mensaje(app_t* handler_app)
 {
-    switch(handler_app->mensaje.ptr_datos[0])           // R_C3_12
+    switch(handler_app->mensaje.ptr_datos[INDICE_CAMPO_C])           // R_C3_12
     {
-        case 'C':                                       // A camelCase
+        case 'C':                       // A camelCase
+            app_camelCase(handler_app);    
+            break; 
+        
+        case 'P':                       // A PascalCase
+            app_PascalCase(handler_app);
+            break; 
+        
+        case 'S':                       // A snake_case
+            app_snake_case(handler_app);
+            break; // Para salir del case.
+        
+        default:                                                // R_C3_6 - R_C3_11
+        {
+            handler_app->error_type = ERROR_INVALID_OPCODE;
+            app_inicializar_array_palabras(handler_app);
+            return false;            
+        }
+        
+    }
+    return true;
+}
+
+/**
+ * @brief Pone en cero el array de palabras
+ *          Se la llama al iniciar y si aparece un ERROR_INVALID_DATA para que no queden datos corruptos
+ * 
+ * @param handler_app 
+ */
+static void app_inicializar_array_palabras(app_t* handler_app)
+{
+    for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
+        for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
+        {
+            handler_app->palabras[i][j] = 0;
+        }
+}
+
+/**
+ * @brief Inserta el mensaje de error dentro del campo de mensaje de app_t
+ * 
+ * @param handler_app 
+ */
+static void app_insertar_mensaje_error(app_t* handler_app)      // R_C3_13
+{
+    uint8_t pos = 0;
+    handler_app->mensaje.ptr_datos[pos++] = 'E';   
+    handler_app->mensaje.ptr_datos[pos++] = '0';  
+    handler_app->mensaje.ptr_datos[pos++] = handler_app->error_type + '0';
+    handler_app->mensaje.cantidad = 3;
+    handler_app->error_type = SIN_ERROR;
+}
+
+/**
+ * @brief 
+ * 
+ * @param handler_app 
+ */
+static void app_camelCase(app_t* handler_app)
         {
             handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
 
@@ -213,9 +273,14 @@ static bool app_procesar_mensaje(app_t* handler_app)
                     handler_app->mensaje.cantidad++;
                 }
             }
-            break; // Para salir del case.
         }
-        case 'P':                                       // A PascalCase
+
+/**
+ * @brief 
+ * 
+ * @param handler_app 
+ */
+static void app_PascalCase(app_t* handler_app)
         {
             handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
 
@@ -241,9 +306,14 @@ static bool app_procesar_mensaje(app_t* handler_app)
                     handler_app->mensaje.cantidad++;
                 }
             }
-            break; // Para salir del case.
         }
-        case 'S':                                       // A snake_case
+
+/**
+ * @brief 
+ * 
+ * @param handler_app 
+ */
+static void app_snake_case(app_t* handler_app)
         {
             handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
 
@@ -272,32 +342,6 @@ static bool app_procesar_mensaje(app_t* handler_app)
                     handler_app->mensaje.cantidad++;
                 }
             }
-            break; // Para salir del case.
-        }
-        default:                                                // R_C3_6 - R_C3_11
-        {
-            handler_app->error_type = ERROR_INVALID_OPCODE;
-            app_inicializar_array_palabras(handler_app);
-            return false;            
-        }
-        
-    }
-    return true;
-}
-
-/**
- * @brief Pone en cero el array de palabras
- *          Se la llama al iniciar y si aparece un ERROR_INVALID_DATA para que no queden datos corruptos
- * 
- * @param handler_app 
- */
-static void app_inicializar_array_palabras(app_t* handler_app)
-{
-    for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
-        for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
-        {
-            handler_app->palabras[i][j] = 0;
-        }
 }
 
 /**

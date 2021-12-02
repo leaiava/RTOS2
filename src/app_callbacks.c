@@ -11,12 +11,12 @@
 #include "app_callbacks.h"
 #include "app.h"
 
-static bool app_extraer_palabras( uint8_t** palabras , tMensaje* mensaje );
-static void app_inicializar_array_palabras(uint8_t** palabras );
+static bool app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaje* mensaje );
+static void app_inicializar_array_palabras(uint8_t (*palabras)[CANT_LETRAS_MAX]);
 
 void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 {
-	tMensaje* mensaje = (tMensaje*) mensaje_a_procesar;
+
     if ( ((tMensaje*)mensaje_a_procesar)->evento_tipo == PAQUETE)
     {
         // TODO: Chequear paquete
@@ -32,7 +32,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 
             // Y enviamos el dato a la cola para procesar.
             //activeObjectEnqueue( &OA_C, mensaje );
-            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C),(tMensaje*) mensaje_a_procesar);
+            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C), mensaje_a_procesar);//&mensaje
                                 
             break; 
             
@@ -74,16 +74,15 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 //void app_OA_C(activeObjectFamily_t* caller_ao, void* mensaje_a_procesar)
 void app_OAC(void* caller_ao, void* mensaje_a_procesar)
 {
-    tMensaje* mensaje = (tMensaje*) mensaje_a_procesar;
-
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
 
-    app_extraer_palabras( palabras , mensaje ); //TODO: Analizar e inyectar el error
+    app_inicializar_array_palabras(palabras);
+    app_extraer_palabras( palabras , (tMensaje*) mensaje_a_procesar ); //TODO: Analizar e inyectar el error
 
     
     
-    ((activeObject_t*)caller_ao)->handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
-
+    //((activeObject_t*)caller_ao)->handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
+    ((tMensaje*) mensaje_a_procesar)->cantidad = INDICE_CAMPO_DATOS;
     /* Bucle para recorrer todas las palabras*/ 
     for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
     {
@@ -100,15 +99,19 @@ void app_OAC(void* caller_ao, void* mensaje_a_procesar)
             
             /* Cargo en el mensaje el caracter correspondiente*/ 
             
-            ((activeObject_t*)caller_ao)->handler_app->mensaje.ptr_datos[((activeObject_t*)caller_ao)->handler_app->mensaje.cantidad] = palabras[i][j];
+            //((activeObject_t*)caller_ao)->handler_app->mensaje.ptr_datos[((activeObject_t*)caller_ao)->handler_app->mensaje.cantidad] = palabras[i][j];
+            ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
             /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
             palabras[i][j] = 0; // TODO: Esto creo no hace falta. Estoy quemado para razonarlo ahora.
             /* Incremento el tamaño del paquete*/
-            ((activeObject_t*)caller_ao)->handler_app->mensaje.cantidad++;
+            //((activeObject_t*)caller_ao)->handler_app->mensaje.cantidad++;
+            ((tMensaje*) mensaje_a_procesar)->cantidad++;
+            ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;
         }
     }
     // Y enviamos el dato a la cola para procesar.
-    activeObjectEnqueue( (activeObject_t*)caller_ao ,  &((activeObject_t*)caller_ao)->handler_app->mensaje );
+
+    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
     //xQueueSend( caller_ao. , , 0);
     //xQueueSend( ao->activeObjectQueue, value, 0 );
 }
@@ -123,7 +126,7 @@ void app_OAS(void* caller_ao, void* mensaje_a_procesar)
 
 }
 
-static bool app_extraer_palabras( uint8_t** palabras , tMensaje* mensaje )
+static bool app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaje* mensaje )
 {
     uint32_t palabra = PALABRA_INICIAL;
     uint32_t caracter = CARACTER_INICIAL;
@@ -214,7 +217,7 @@ static bool app_extraer_palabras( uint8_t** palabras , tMensaje* mensaje )
     return true;
 }
 
-static void app_inicializar_array_palabras(uint8_t** palabras )
+static void app_inicializar_array_palabras(uint8_t (*palabras)[CANT_LETRAS_MAX])
 {
     for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
         for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)

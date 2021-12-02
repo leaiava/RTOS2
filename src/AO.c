@@ -16,7 +16,7 @@ bool activeObjectCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunc
     BaseType_t retValue = pdFALSE;
 
     // Creamos la cola asociada a este objeto activo.
-    ao->activeObjectQueue = xQueueCreate( N_QUEUE_AO, sizeof( void* ) );
+    ao->activeObjectQueue = xQueueCreate( N_QUEUE_AO, sizeof( tMensaje ) );
 
     // Asignamos la tarea al objeto activo.
     ao->taskName = taskForAO;
@@ -97,6 +97,12 @@ void activeObjectEnqueue( activeObject_t* ao, void* value )
 {
     // Y lo enviamos a la cola.
     xQueueSend( ao->activeObjectQueue, value, 0 );
+}
+
+void activeObjectEnqueueResponse( activeObject_t* ao, void* value )
+{
+    // Y lo enviamos a la cola.
+    xQueueSend( ao->responseQueue, value, 0 );
 }
 
 void activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue )

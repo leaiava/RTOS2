@@ -86,9 +86,7 @@ bool app_crear(app_t* handler_app , sf_t* handler_sf)
         OA_S.itIsImmortal = false;
         OA_S.handler_app = handler_app;
 
-        OA_app.activeObjectQueue = handler_sf->ptr_objeto1->cola;
         // Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-
         activeObjectOperationCreate( &OA_app, app_OAapp, activeObjectTask , handler_sf->ptr_objeto2->cola);
 
         OA_app.activeObjectQueue = handler_sf->ptr_objeto1->cola;

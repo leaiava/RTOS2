@@ -14,7 +14,7 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
-#include "semphr.h"
+#include "queue.h"
 #include "sapi.h"
 #include "app.h"
 
@@ -49,6 +49,7 @@ bool activeObjectCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunc
 void activeObjectTask( void* pvParameters );
 
 void activeObjectEnqueue( activeObject_t* ao, void* value );
+void activeObjectEnqueueResponse( activeObject_t* ao, void* value );
 void activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue );
 
 #endif /* AO_H__ */

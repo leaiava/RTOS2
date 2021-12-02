@@ -12,6 +12,7 @@
 #define AO_H__
 
 #include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
 #include "task.h"
 #include "semphr.h"
 #include "sapi.h"
@@ -43,11 +44,11 @@ typedef struct
     
 } activeObject_t;
 
-bool_t activeObjectCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO );
+bool activeObjectCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO );
 
 void activeObjectTask( void* pvParameters );
 
 void activeObjectEnqueue( activeObject_t* ao, void* value );
-bool_t activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue );
+void activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue );
 
 #endif /* AO_H__ */

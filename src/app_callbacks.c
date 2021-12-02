@@ -16,53 +16,46 @@ static void app_inicializar_array_palabras(uint8_t** palabras );
 
 void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 {
-    tMensaje* mensaje = (tMensaje*) mensaje_a_procesar;
-    ((activeObject_t*)caller_ao)->handler_app->mensaje = *(tMensaje*) mensaje_a_procesar;
-    
-    activeObject_t OA_C = *(activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C;
-    activeObject_t OA_P = *(activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P;
-    activeObject_t OA_S = *(activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S;
-
-
-
-    if (mensaje->evento_tipo == PAQUETE)
+	tMensaje* mensaje = (tMensaje*) mensaje_a_procesar;
+    if ( ((tMensaje*)mensaje_a_procesar)->evento_tipo == PAQUETE)
     {
         // TODO: Chequear paquete
      
-        switch(mensaje->ptr_datos[INDICE_CAMPO_C])           // R_C3_12
-        {
+        switch( ((tMensaje*)mensaje_a_procesar)->ptr_datos[INDICE_CAMPO_C] ) // R_C3_12
+    	{
             case 'C':
-            if( OA_C.itIsAlive == FALSE )
-				{
-					// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-					activeObjectOperationCreate( &OA_C, app_OAC, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola );
-				}
+            if ( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C)->itIsAlive == false )
+            {
+            	// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
+				activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C , app_OAC, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola );
+			}
 
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( &OA_C, mensaje );
+            //activeObjectEnqueue( &OA_C, mensaje );
+            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C),(tMensaje*) mensaje_a_procesar);
                                 
             break; 
             
             case 'P':                       // A PascalCase
-            if( OA_P.itIsAlive == FALSE )
+            if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P)->itIsAlive == false )
 				{
 					// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-					activeObjectCreate( &OA_P, app_OAP, activeObjectTask );
+					activeObjectCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P, app_OAP, activeObjectTask );
 				}
 
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( &OA_P, mensaje );
+            activeObjectEnqueue( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P, mensaje_a_procesar );
                 break; 
             
             case 'S':                       // A snake_case
-            if( OA_S.itIsAlive == FALSE )
+            if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S)->itIsAlive == false)
 				{
 					// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-					activeObjectCreate( &OA_S, app_OAS, activeObjectTask );
+					activeObjectCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S, app_OAS, activeObjectTask );
 				}
 
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( &OA_S, mensaje );
+            activeObjectEnqueue( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S, mensaje_a_procesar );
                 break; // Para salir del case.
             
             default:                                                // R_C3_6 - R_C3_11

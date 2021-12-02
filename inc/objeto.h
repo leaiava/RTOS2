@@ -21,6 +21,8 @@
 
 /*==================[definiciones y macros]==================================*/
 #define N_QUEUE	10
+#define PAQUETE     1
+#define RESPUESTA   2
 
 typedef struct
 {

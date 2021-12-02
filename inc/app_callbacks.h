@@ -11,9 +11,6 @@
 #ifndef __APP_CALLBACKS_H__
 #define __APP_CALLBACKS_H__
 
-#define PAQUETE     1
-#define RESPUESTA   2
-
 #include "AO.h"
 
 

@@ -19,6 +19,13 @@ static void app_inicializar_array_palabras(app_t* handler_app);
 static void app_camelCase(app_t* handler_app);
 static void app_PascalCase(app_t* handler_app);
 static void app_snake_case(app_t* handler_app);
+
+activeObject_t OA_app;
+activeObject_t OA_C;
+activeObject_t OA_P;
+activeObject_t OA_S;
+
+
 void task_app(void* pvParameters)
 {
 	app_t* ptr_app = pvParameters;
@@ -59,10 +66,6 @@ bool app_crear(app_t* handler_app , sf_t* handler_sf)
         /* Inicio las palabras en cero */
         app_inicializar_array_palabras(handler_app);
 
-        activeObject_t OA_app;
-        activeObject_t OA_C;
-        activeObject_t OA_P;
-        activeObject_t OA_S;
         
 	    OA_app.itIsAlive = false;
         OA_app.itIsImmortal = true;
@@ -74,7 +77,7 @@ bool app_crear(app_t* handler_app , sf_t* handler_sf)
         OA_C.itIsAlive = false;
         OA_C.itIsImmortal = false;
         OA_C.handler_app = handler_app;
-        
+
 	    OA_P.itIsAlive = false;
         OA_P.itIsImmortal = false;
         OA_P.handler_app = handler_app;
@@ -85,6 +88,7 @@ bool app_crear(app_t* handler_app , sf_t* handler_sf)
 
         OA_app.activeObjectQueue = handler_sf->ptr_objeto1->cola;
         // Se crea el objeto activo, con el comando correspondiente y tarea asociada.
+
         activeObjectOperationCreate( &OA_app, app_OAapp, activeObjectTask , handler_sf->ptr_objeto2->cola);
 
         OA_app.activeObjectQueue = handler_sf->ptr_objeto1->cola;

@@ -10,7 +10,7 @@
 
 #include "AO.h"
 
-bool_t activeObjectCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO )
+bool activeObjectCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO )
 {
     // Una variable local para saber si hemos creado correctamente los objetos.
     BaseType_t retValue = pdFALSE;
@@ -53,7 +53,7 @@ void activeObjectTask( void* pvParameters )
     BaseType_t retQueueVal;
 
     // Una variable local para almacenar el dato desde la cola.
-     void*  auxValue;
+    void*  auxValue;
 
     // Obtenemos el puntero al objeto activo.
     activeObject_t* actObj = ( activeObject_t* ) pvParameters;
@@ -65,7 +65,7 @@ void activeObjectTask( void* pvParameters )
         if( (uxQueueMessagesWaiting( actObj->activeObjectQueue )) || actObj->itIsImmortal )
         {
             // Hago una lectura de la cola.
-            retQueueVal = xQueueReceive( actObj->activeObjectQueue, (void*) &auxValue, portMAX_DELAY );
+            retQueueVal = xQueueReceive( actObj->activeObjectQueue, &auxValue, portMAX_DELAY );
 
             // Si la lectura fue exitosa, proceso el dato.
             if( retQueueVal )
@@ -73,7 +73,7 @@ void activeObjectTask( void* pvParameters )
                 // Llamamos al callback correspondiente en base al comando que se le pas�.
                 /* TODO:INFO a la funcion llamante le mando el ao que la llamo coo referenca porq
                    es necesario */
-                ( actObj->callbackFunc )( actObj,  auxValue );
+                ( actObj->callbackFunc )( actObj,  &auxValue );
             }
         }
 
@@ -99,7 +99,7 @@ void activeObjectEnqueue( activeObject_t* ao, void* value )
     xQueueSend( ao->activeObjectQueue, value, 0 );
 }
 
-bool_t activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue )
+void activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue )
 {
     /* cargo miembro que no estaba */
     ao->responseQueue= response_queue;

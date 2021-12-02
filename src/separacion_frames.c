@@ -310,6 +310,7 @@ static void sf_rx_isr( void *parametro )
 	tMensaje mensaje;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
+
 	if(handler->buffer == NULL)
 		return;
 	
@@ -323,6 +324,7 @@ static void sf_rx_isr( void *parametro )
 			mensaje.ptr_datos = handler->buffer + INDICE_INICIO_MENSAJE;
 			mensaje.cantidad = handler->cantidad - LEN_HEADER;
 			// Envío a la cola el mensaje para la capa de aplicación.
+			mensaje.evento_tipo = PAQUETE; 
 			objeto_post_fromISR(handler->ptr_objeto1, mensaje, &xHigherPriorityTaskWoken); // R_C2_22
 			sf_reiniciar_mensaje(handler);
 			//  Pido un bloque de memoria nuevo, en caso de que no haya para la recepción por UART

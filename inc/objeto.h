@@ -24,8 +24,9 @@
 
 typedef struct
 {
-	uint8_t* ptr_datos;
+	uint32_t evento_tipo;
 	uint32_t cantidad;
+	uint8_t* ptr_datos;
 }tMensaje;
 
 typedef struct

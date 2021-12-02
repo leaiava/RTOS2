@@ -7,6 +7,8 @@
  * Date: 23/11/2021
  * Version: v3.0
  *===========================================================================*/
+#ifndef APP_H_
+#define APP_H_
 
 #include "separacion_frames.h"
 
@@ -39,3 +41,5 @@ typedef struct
 } app_t;
 
 bool app_crear(app_t* handler_app , sf_t* handler_sf);
+
+#endif /* APP_H_ */ 

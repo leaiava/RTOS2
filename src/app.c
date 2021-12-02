@@ -9,6 +9,8 @@
  *===========================================================================*/
 
 #include "app.h"
+#include "AO.h"
+#include "app_callbacks.h"
 
 static bool app_extraer_palabras(app_t* handler_app);
 static bool app_procesar_mensaje(app_t* handler_app);
@@ -21,7 +23,7 @@ void task_app(void* pvParameters)
 {
 	app_t* ptr_app = pvParameters;
 
-	while(TRUE)
+    while(TRUE)
 	{
 		sf_mensaje_recibir( ptr_app->handler_sf , &(ptr_app->mensaje) );
 		
@@ -57,6 +59,37 @@ bool app_crear(app_t* handler_app , sf_t* handler_sf)
         /* Inicio las palabras en cero */
         app_inicializar_array_palabras(handler_app);
 
+        activeObject_t OA_app;
+        activeObject_t OA_C;
+        activeObject_t OA_P;
+        activeObject_t OA_S;
+        
+	    OA_app.itIsAlive = false;
+        OA_app.itIsImmortal = true;
+        OA_app.handler_app = handler_app;
+        OA_app.ptr_OA_C = &OA_C;
+        OA_app.ptr_OA_P = &OA_P;
+        OA_app.ptr_OA_S = &OA_S;
+
+        OA_C.itIsAlive = false;
+        OA_C.itIsImmortal = false;
+        OA_C.handler_app = handler_app;
+        
+	    OA_P.itIsAlive = false;
+        OA_P.itIsImmortal = false;
+        OA_P.handler_app = handler_app;
+        
+	    OA_S.itIsAlive = false;
+        OA_S.itIsImmortal = false;
+        OA_S.handler_app = handler_app;
+
+        OA_app.activeObjectQueue = handler_sf->ptr_objeto1->cola;
+        // Se crea el objeto activo, con el comando correspondiente y tarea asociada.
+        activeObjectOperationCreate( &OA_app, app_OAapp, activeObjectTask , handler_sf->ptr_objeto2->cola);
+
+        OA_app.activeObjectQueue = handler_sf->ptr_objeto1->cola;
+
+    /*
         BaseType_t res;
 
         res = xTaskCreate(
@@ -69,7 +102,7 @@ bool app_crear(app_t* handler_app , sf_t* handler_sf)
         );
 
         configASSERT(res == pdPASS);
-        
+    */    
         return true;
     }
     return false;
@@ -248,32 +281,32 @@ static void app_insertar_mensaje_error(app_t* handler_app)      // R_C3_13
  * @param handler_app 
  */
 static void app_camelCase(app_t* handler_app)
-        {
-            handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
+{
+    handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
 
-            /* Bucle para recorrer todas las palabras*/ 
-            for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
-            {
-                if (handler_app->palabras[i][CARACTER_INICIAL] == 0 ) 
-                    break;  // Si el primer caracter de la palabra es cero, significa que termine con todas las palabras y salgo del for
-                for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
-                {
-                    if (handler_app->palabras[i][j] == 0 ) 
-                        break; //Si es cero, llegué al final de la palabra y salgo del for.
-                    
-                    /* A partir de la segunda palabra, pongo la primer letra de la palabra en mayúscula */
-                    if ( (i > 0) && (j == 0))
-                        handler_app->palabras[i][j] += A_MAYUSCULA;
-                    
-                    /* Cargo en el mensaje el caracter correspondiente*/ 
-                    handler_app->mensaje.ptr_datos[handler_app->mensaje.cantidad] = handler_app->palabras[i][j];
-                    /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
-                    handler_app->palabras[i][j] = 0;
-                    /* Incremento el tamaño del paquete*/
-                    handler_app->mensaje.cantidad++;
-                }
-            }
+    /* Bucle para recorrer todas las palabras*/ 
+    for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
+    {
+        if (handler_app->palabras[i][CARACTER_INICIAL] == 0 ) 
+            break;  // Si el primer caracter de la palabra es cero, significa que termine con todas las palabras y salgo del for
+        for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
+        {
+            if (handler_app->palabras[i][j] == 0 ) 
+                break; //Si es cero, llegué al final de la palabra y salgo del for.
+            
+            /* A partir de la segunda palabra, pongo la primer letra de la palabra en mayúscula */
+            if ( (i > 0) && (j == 0))
+                handler_app->palabras[i][j] += A_MAYUSCULA;
+            
+            /* Cargo en el mensaje el caracter correspondiente*/ 
+            handler_app->mensaje.ptr_datos[handler_app->mensaje.cantidad] = handler_app->palabras[i][j];
+            /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
+            handler_app->palabras[i][j] = 0;
+            /* Incremento el tamaño del paquete*/
+            handler_app->mensaje.cantidad++;
         }
+    }
+}
 
 /**
  * @brief 
@@ -281,32 +314,32 @@ static void app_camelCase(app_t* handler_app)
  * @param handler_app 
  */
 static void app_PascalCase(app_t* handler_app)
-        {
-            handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
+{
+    handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
 
-            /* Bucle para recorrer todas las palabras*/ 
-            for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
-            {
-                if (handler_app->palabras[i][CARACTER_INICIAL] == 0 ) 
-                    break;  // Si el primer caracter de la palabra es cero, significa que termine con todas las palabras y salgo del for
-                for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
-                {
-                    if (handler_app->palabras[i][j] == 0 ) 
-                        break; //Si es cero, llegué al final de la palabra y salgo del for.
-                    
-                    /* Pongo la primer letra de la palabra en mayúscula */
-                    if ( j == 0 )
-                        handler_app->palabras[i][j] += A_MAYUSCULA;
-                    
-                    /* Cargo en el mensaje el caracter correspondiente*/ 
-                    handler_app->mensaje.ptr_datos[handler_app->mensaje.cantidad] = handler_app->palabras[i][j];
-                    /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
-                    handler_app->palabras[i][j] = 0;
-                    /* Incremento el tamaño del paquete*/
-                    handler_app->mensaje.cantidad++;
-                }
-            }
+    /* Bucle para recorrer todas las palabras*/ 
+    for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
+    {
+        if (handler_app->palabras[i][CARACTER_INICIAL] == 0 ) 
+            break;  // Si el primer caracter de la palabra es cero, significa que termine con todas las palabras y salgo del for
+        for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
+        {
+            if (handler_app->palabras[i][j] == 0 ) 
+                break; //Si es cero, llegué al final de la palabra y salgo del for.
+            
+            /* Pongo la primer letra de la palabra en mayúscula */
+            if ( j == 0 )
+                handler_app->palabras[i][j] += A_MAYUSCULA;
+            
+            /* Cargo en el mensaje el caracter correspondiente*/ 
+            handler_app->mensaje.ptr_datos[handler_app->mensaje.cantidad] = handler_app->palabras[i][j];
+            /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
+            handler_app->palabras[i][j] = 0;
+            /* Incremento el tamaño del paquete*/
+            handler_app->mensaje.cantidad++;
         }
+    }
+}
 
 /**
  * @brief 
@@ -314,47 +347,32 @@ static void app_PascalCase(app_t* handler_app)
  * @param handler_app 
  */
 static void app_snake_case(app_t* handler_app)
-        {
-            handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
+{
+    handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
 
-            /* Bucle para recorrer todas las palabras*/ 
-            for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
-            {
-                if (handler_app->palabras[i][CARACTER_INICIAL] == 0 ) 
-                    break;  // Si el primer caracter de la palabra es cero, significa que termine con todas las palabras y salgo del for
-                for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
+    /* Bucle para recorrer todas las palabras*/ 
+    for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
+    {
+        if (handler_app->palabras[i][CARACTER_INICIAL] == 0 ) 
+            break;  // Si el primer caracter de la palabra es cero, significa que termine con todas las palabras y salgo del for
+        for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
+        {
+            if (handler_app->palabras[i][j] == 0 ) 
+                break; //Si es cero, llegué al final de la palabra y salgo del for.
+            
+            /* A partir de la segunda palabra, inserto un '_' al inicio */
+            if ( (i > 0) && (j == 0) )
                 {
-                    if (handler_app->palabras[i][j] == 0 ) 
-                        break; //Si es cero, llegué al final de la palabra y salgo del for.
-                    
-                    /* A partir de la segunda palabra, inserto un '_' al inicio */
-                    if ( (i > 0) && (j == 0) )
-                        {
-                            handler_app->mensaje.ptr_datos[handler_app->mensaje.cantidad] = '_';
-                            handler_app->mensaje.cantidad++;
-                        }
-                     
-                    /* Cargo en el mensaje el caracter correspondiente*/ 
-                    handler_app->mensaje.ptr_datos[handler_app->mensaje.cantidad] = handler_app->palabras[i][j];
-                    /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
-                    handler_app->palabras[i][j] = 0;
-                    /* Incremento el tamaño del paquete*/
+                    handler_app->mensaje.ptr_datos[handler_app->mensaje.cantidad] = '_';
                     handler_app->mensaje.cantidad++;
                 }
-            }
-}
-
-/**
- * @brief Inserta el mensaje de error dentro del campo de mensaje de app_t
- * 
- * @param handler_app 
- */
-static void app_insertar_mensaje_error(app_t* handler_app)      // R_C3_13
-{
-    uint8_t pos = 0;
-    handler_app->mensaje.ptr_datos[pos++] = 'E';   
-    handler_app->mensaje.ptr_datos[pos++] = '0';  
-    handler_app->mensaje.ptr_datos[pos++] = handler_app->error_type + '0';
-    handler_app->mensaje.cantidad = 3;
-    handler_app->error_type = SIN_ERROR;
+                
+            /* Cargo en el mensaje el caracter correspondiente*/ 
+            handler_app->mensaje.ptr_datos[handler_app->mensaje.cantidad] = handler_app->palabras[i][j];
+            /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
+            handler_app->palabras[i][j] = 0;
+            /* Incremento el tamaño del paquete*/
+            handler_app->mensaje.cantidad++;
+        }
+    }
 }

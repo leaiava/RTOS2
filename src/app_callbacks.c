@@ -31,8 +31,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 			}
 
             // Y enviamos el dato a la cola para procesar.
-            //activeObjectEnqueue( &OA_C, mensaje );
-            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C), mensaje_a_procesar);//&mensaje
+            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C), mensaje_a_procesar);
                                 
             break; 
             
@@ -40,23 +39,25 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P)->itIsAlive == false )
 				{
 					// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-					activeObjectCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P, app_OAP, activeObjectTask );
+					activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P , app_OAP, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola );
 				}
 
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P, mensaje_a_procesar );
-                break; 
+            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P), mensaje_a_procesar);
+
+            break;
             
             case 'S':                       // A snake_case
             if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S)->itIsAlive == false)
 				{
 					// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-					activeObjectCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S, app_OAS, activeObjectTask );
+            		activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S , app_OAS, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola );
 				}
 
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S, mensaje_a_procesar );
-                break; // Para salir del case.
+            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S), mensaje_a_procesar);
+
+            break; // Para salir del case.
             
             default:                                                // R_C3_6 - R_C3_11
             {
@@ -113,11 +114,76 @@ activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
 
 void app_OAP(void* caller_ao, void* mensaje_a_procesar)
 {
+    uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
+
+    app_inicializar_array_palabras(palabras);
+    app_extraer_palabras( palabras , (tMensaje*) mensaje_a_procesar ); //TODO: Analizar e inyectar el error
+
+    ((tMensaje*) mensaje_a_procesar)->cantidad = INDICE_CAMPO_DATOS;
+    /* Bucle para recorrer todas las palabras*/
+    for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
+    {
+        if (palabras[i][CARACTER_INICIAL] == 0 )
+            break;  // Si el primer caracter de la palabra es cero, significa que termine con todas las palabras y salgo del for
+        for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
+        {
+            if (palabras[i][j] == 0 )
+                break; //Si es cero, llegué al final de la palabra y salgo del for.
+
+            /* Pongo la primer letra de la palabra en mayúscula */
+            if ( j == 0 )
+                palabras[i][j] += A_MAYUSCULA;
+
+            /* Cargo en el mensaje el caracter correspondiente*/
+            ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
+            /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
+            palabras[i][j] = 0; // TODO: Esto creo no hace falta. Estoy quemado para razonarlo ahora.
+            /* Incremento el tamaño del paquete*/
+            ((tMensaje*) mensaje_a_procesar)->cantidad++;
+            ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;
+        }
+    }
+    // Y enviamos el dato a la cola para procesar.
+    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
 
 }
 
 void app_OAS(void* caller_ao, void* mensaje_a_procesar)
 {
+    uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
+
+    app_inicializar_array_palabras(palabras);
+    app_extraer_palabras( palabras , (tMensaje*) mensaje_a_procesar ); //TODO: Analizar e inyectar el error
+
+    ((tMensaje*) mensaje_a_procesar)->cantidad = INDICE_CAMPO_DATOS;
+    /* Bucle para recorrer todas las palabras*/
+    for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
+    {
+        if (palabras[i][CARACTER_INICIAL] == 0 )
+            break;  // Si el primer caracter de la palabra es cero, significa que termine con todas las palabras y salgo del for
+        for (uint32_t j = 0 ; j < CANT_LETRAS_MAX ; j++)
+        {
+            if (palabras[i][j] == 0 )
+                break; //Si es cero, llegué al final de la palabra y salgo del for.
+
+            /* A partir de la segunda palabra, inserto un '_' al inicio */
+            if ( (i > 0) && (j == 0) )
+                {
+            	 ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = '_';
+                    ((tMensaje*) mensaje_a_procesar)->cantidad++;
+                }
+
+            /* Cargo en el mensaje el caracter correspondiente*/
+            ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
+            /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
+            palabras[i][j] = 0; // TODO: Esto creo no hace falta. Estoy quemado para razonarlo ahora.
+            /* Incremento el tamaño del paquete*/
+            ((tMensaje*) mensaje_a_procesar)->cantidad++;
+            ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;
+        }
+    }
+    // Y enviamos el dato a la cola para procesar.
+    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
 
 }
 

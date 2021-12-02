@@ -40,5 +40,5 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate);
 
 bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje);
 void sf_mensaje_procesado_enviar(sf_t* handler, tMensaje mensaje);
-
+void sf_tx_isr(void* parametro);
 #endif /* separacion_frames_H_ */

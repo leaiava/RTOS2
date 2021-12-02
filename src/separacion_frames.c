@@ -25,7 +25,7 @@ static uint8_t sf_decodificar_ascii(uint8_t byte);
 static void sf_bloque_de_memoria_liberar(sf_t* handler);
 static void sf_reiniciar_mensaje(sf_t* handler);
 static void sf_rx_isr(void* parametro);
-static void sf_tx_isr(void* parametro);
+
 static void timer_callback(TimerHandle_t xTimer);
 
 /**
@@ -346,7 +346,7 @@ static void sf_rx_isr( void *parametro )
  * 
  * @param[in] parametro Puntero a la estructura de separación de frames. 
  */
-static void sf_tx_isr( void *parametro )
+void sf_tx_isr( void *parametro )
 {
 	sf_t* handler = (sf_t*) parametro;
 	static uint32_t indice_byte_enviado = 0;

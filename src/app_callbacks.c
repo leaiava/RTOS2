@@ -67,11 +67,14 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             
         }
     }
-    
+    if ( ((tMensaje*)mensaje_a_procesar)->evento_tipo == RESPUESTA)
+    {
+    	activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
+    	uartCallbackSet(((activeObject_t*)caller_ao )->handler_app->handler_sf->uart, UART_TRANSMITER_FREE, sf_tx_isr, ((activeObject_t*)caller_ao )->handler_app->handler_sf);
+    	uartSetPendingInterrupt(((activeObject_t*)caller_ao )->handler_app->handler_sf->uart);
+    }
     //return true;
 }
-
-//void app_OA_C(activeObjectFamily_t* caller_ao, void* mensaje_a_procesar)
 void app_OAC(void* caller_ao, void* mensaje_a_procesar)
 {
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
@@ -79,9 +82,6 @@ void app_OAC(void* caller_ao, void* mensaje_a_procesar)
     app_inicializar_array_palabras(palabras);
     app_extraer_palabras( palabras , (tMensaje*) mensaje_a_procesar ); //TODO: Analizar e inyectar el error
 
-    
-    
-    //((activeObject_t*)caller_ao)->handler_app->mensaje.cantidad = INDICE_CAMPO_DATOS; // Acá iniciará el campo de datos.
     ((tMensaje*) mensaje_a_procesar)->cantidad = INDICE_CAMPO_DATOS;
     /* Bucle para recorrer todas las palabras*/ 
     for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
@@ -98,22 +98,17 @@ void app_OAC(void* caller_ao, void* mensaje_a_procesar)
                 palabras[i][j] += A_MAYUSCULA;
             
             /* Cargo en el mensaje el caracter correspondiente*/ 
-            
-            //((activeObject_t*)caller_ao)->handler_app->mensaje.ptr_datos[((activeObject_t*)caller_ao)->handler_app->mensaje.cantidad] = palabras[i][j];
             ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
             /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
             palabras[i][j] = 0; // TODO: Esto creo no hace falta. Estoy quemado para razonarlo ahora.
             /* Incremento el tamaño del paquete*/
-            //((activeObject_t*)caller_ao)->handler_app->mensaje.cantidad++;
             ((tMensaje*) mensaje_a_procesar)->cantidad++;
             ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;
         }
     }
     // Y enviamos el dato a la cola para procesar.
+activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
 
-    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
-    //xQueueSend( caller_ao. , , 0);
-    //xQueueSend( ao->activeObjectQueue, value, 0 );
 }
 
 void app_OAP(void* caller_ao, void* mensaje_a_procesar)

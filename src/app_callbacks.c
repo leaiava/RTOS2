@@ -31,7 +31,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             case 'C':
             if ( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C)->itIsAlive == false )
             {
-            	// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
+            	// Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
 				if( activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C , app_OAC, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
@@ -45,7 +45,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             case 'P':                       // A PascalCase
             if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P)->itIsAlive == false )
             {
-                // Se crea el objeto activo, con el comando correspondiente y tarea asociada.
+                // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
                 if( activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P , app_OAP, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
@@ -59,7 +59,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             case 'S':                       // A snake_case
             if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S)->itIsAlive == false)
             {
-                // Se crea el objeto activo, con el comando correspondiente y tarea asociada.
+                // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
                 if( activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S , app_OAS, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
@@ -81,7 +81,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
     /* Verifico si el mensaje que llego es un evento con la respuesta procesada*/       //R_AO_2
     if ( ((tMensaje*)mensaje_a_procesar)->evento_tipo == RESPUESTA)
     {
-    	activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
+    	activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar ); //R_AO_4
     }
     
 }
@@ -118,7 +118,7 @@ void app_OAC(void* caller_ao, void* mensaje_a_procesar)
         }
     }
     // Y enviamos el dato a la cola para procesar.
-activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
+activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar ); // R_AO_7
 
 }
 
@@ -154,7 +154,7 @@ void app_OAP(void* caller_ao, void* mensaje_a_procesar)
         }
     }
     // Y enviamos el dato a la cola para procesar.
-    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
+    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );  // R_AO_7
 
 }
 
@@ -193,7 +193,7 @@ void app_OAS(void* caller_ao, void* mensaje_a_procesar)
         }
     }
     // Y enviamos el dato a la cola para procesar.
-    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
+    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar ); // R_AO_7
 
 }
 

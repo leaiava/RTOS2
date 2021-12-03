@@ -77,7 +77,7 @@ void activeObjectTask( void* pvParameters )
             }
         }
 
-        // Caso contrario, la cola est� vac�a, lo que significa que debo eliminar la tarea.
+        // Caso contrario, la cola est� vac�a, lo que significa que debo eliminar la tarea. R_AO_8
         else
         {
             // Cambiamos el estado de la variable de estado, para indicar que el objeto activo no existe más.

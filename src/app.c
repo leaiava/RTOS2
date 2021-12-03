@@ -12,14 +12,6 @@
 #include "AO.h"
 #include "app_callbacks.h"
 
-static bool app_extraer_palabras(app_t* handler_app);
-static bool app_procesar_mensaje(app_t* handler_app);
-static void app_insertar_mensaje_error(app_t* handler_app);  
-static void app_inicializar_array_palabras(app_t* handler_app);
-static void app_camelCase(app_t* handler_app);
-static void app_PascalCase(app_t* handler_app);
-static void app_snake_case(app_t* handler_app);
-
 activeObject_t OA_app;
 activeObject_t OA_C;
 activeObject_t OA_P;

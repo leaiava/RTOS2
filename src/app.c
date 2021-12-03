@@ -35,10 +35,6 @@ bool app_crear(app_t* handler_app , sf_t* handler_sf)
         handler_app->handler_sf = handler_sf;
         handler_app->error_type = SIN_ERROR;
         
-        /* Inicio las palabras en cero */
-        app_inicializar_array_palabras(handler_app);
-
-
 	    OA_app.itIsAlive = false;
         OA_app.itIsImmortal = true;
         OA_app.handler_app = handler_app;

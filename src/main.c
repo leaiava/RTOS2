@@ -32,29 +32,23 @@ void error_handler();
 
 /*==================[funcion principal]======================================*/
 
+app_t* ptr_app;
+sf_t* ptr_sf;
 int main(void)
 {
 	/* Inicializar la placa */
     boardConfig();
 
-    sf_t* ptr_sf = sf_crear();
+    ptr_sf = sf_crear();
     configASSERT(ptr_sf != NULL);
 
     if (!sf_init(ptr_sf, UART_USED, BAUD_RATE))
 	    error_handler();
 
-    BaseType_t res;
+	bool state = app_crear( ptr_app , ptr_sf);
 
-	res = xTaskCreate(
-		task_app,						 // Funcion de la tarea a ejecutar
-		(const char *)"task_app", 		 // Nombre de la tarea como String amigable para el usuario
-		configMINIMAL_STACK_SIZE * 2,	 // Cantidad de stack de la tarea
-		ptr_sf,							 // Parametros de tarea
-		tskIDLE_PRIORITY + 1,			 // Prioridad de la tarea
-		0								 // Puntero a la tarea creada en el sistema
-	);
-
-	configASSERT(res == pdPASS);
+	// Gestion de errores
+    configASSERT( state );
 
     vTaskStartScheduler();
 

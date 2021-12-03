@@ -27,7 +27,13 @@ Función de recibir mensaje: se encarga de pedir un bloque de memoria al pool, d
 
 Rutina de interrupción de recepción: recibe con sAPI los bytes de la UART y se fija que llegue el SOM y EOM. Cuando el paquete está completo y es válido, manda el paquete por la cola de objeto 1.
 
-Aplicación: Se queda esperando el mensaje por cola, cuando lo recibe lo procesa y lo devuelve a la capa de separacion de frame a través de la cola de objeto 2. Para procesar el mensaje lo que hace primero es extraer todas las palabras del mensaje de acuerdo a los requerimientos. Cuandose tienen todas las palabras según el campo C del mensaje se arma el paquete a enviar con el formato correspondiente.
+Aplicación: Se implementa la aplicación con un objeto activo que se encarga de recibir 2 tipo de evento, uno con los paquetes a procesar de capa 2 y otro con paquetes procesados. 
+
+Al recibir un evento con un paquete para procesar verifica que su contenido sea correcto y deriva el procesamiento a otro objeto activo.
+
+Al recibir un evento con un paquete procesado lo devuelve a capa 2.
+
+Existira un objeto activo de procesamiento por formato que puede convertir la aplicación, en este caso tendremos 3 (camelCase, PascalCase y snake_case).
 
 Rutina de interrupción de transmisión: obtiene el mensaje procesado la cola de objeto 2, lo envía por la UART y libera la memoria.
 
@@ -80,15 +86,15 @@ Rutina de interrupción de transmisión: obtiene el mensaje procesado la cola de
 - [x] R_C3_12
 - [x] R_C3_13
 ### Requerimientos Objeto :
-- [ ] R_AO_1
-- [ ] R_AO_2
-- [ ] R_AO_3
-- [ ] R_AO_4
-- [ ] R_AO_5
-- [ ] R_AO_6
-- [ ] R_AO_7
-- [ ] R_AO_8
-- [ ] R_AO_9
+- [x] R_AO_1
+- [x] R_AO_2
+- [x] R_AO_3
+- [x] R_AO_4
+- [x] R_AO_5
+- [x] R_AO_6
+- [x] R_AO_7
+- [x] R_AO_8
+- [x] R_AO_9
 
 ### Requerimientos Opcionales:
 - [ ] R_O_1

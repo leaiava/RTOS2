@@ -31,8 +31,9 @@ typedef struct
     tMensaje mensaje;                      ///< Mensaje a recibirse a través del objeto.
     void *prt_pool;                        ///< Puntero al pool de memoria.
     QMPool pool_memoria;                   ///< Memory pool (contienen la información que necesita la biblioteca qmpool.h)
-    TimerHandle_t timer;                   ///< Timer
-    TickType_t periodo_timer;              ///< Periodo del timer
+    TimerHandle_t timerRx;                 ///< TimerRx
+    TimerHandle_t timerTx;                 ///< TimerTx
+    TickType_t periodo_timerRx;              ///< Periodo del timer
 } sf_t;
 
 sf_t* sf_crear(void);
@@ -40,5 +41,5 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate);
 
 bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje);
 void sf_mensaje_procesado_enviar(sf_t* handler, tMensaje mensaje);
-
+void sf_tx_isr(void* parametro);
 #endif /* separacion_frames_H_ */

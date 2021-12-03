@@ -21,11 +21,14 @@
 
 /*==================[definiciones y macros]==================================*/
 #define N_QUEUE	10
+#define PAQUETE     1
+#define RESPUESTA   2
 
 typedef struct
 {
-	uint8_t* ptr_datos;
+	uint32_t evento_tipo;
 	uint32_t cantidad;
+	uint8_t* ptr_datos;
 }tMensaje;
 
 typedef struct

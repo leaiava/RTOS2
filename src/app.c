@@ -25,6 +25,25 @@ activeObject_t OA_C;
 activeObject_t OA_P;
 activeObject_t OA_S;
 
+void task_app(void* pvParameters)
+{
+	app_t* ptr_app = pvParameters;
+
+    while(TRUE)
+	{
+		sf_mensaje_recibir( ptr_app->handler_sf , &(ptr_app->mensaje) );
+		
+        if (app_extraer_palabras(ptr_app) == 0)
+            app_insertar_mensaje_error(ptr_app);    // Si salió con error, inserto el mensaje de error para ser enviado
+        
+        else if (app_procesar_mensaje(ptr_app) == 0)
+            app_insertar_mensaje_error(ptr_app);    // Si salió con error, inserto el mensaje de error para ser enviado
+
+        /* Envío el mensaje*/
+		sf_mensaje_procesado_enviar(ptr_app->handler_sf, ptr_app->mensaje );
+	}
+}
+
 /**
  * @brief Asigna memoria para una estructura de app, la inicializa y crea la tarea.
  * 

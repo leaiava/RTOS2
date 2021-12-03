@@ -104,8 +104,7 @@ void app_OAC(void* caller_ao, void* mensaje_a_procesar)
             
             /* Cargo en el mensaje el caracter correspondiente*/ 
             ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
-            /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
-            palabras[i][j] = 0; // TODO: Esto creo no hace falta. Estoy quemado para razonarlo ahora.
+
             /* Incremento el tamaño del paquete*/
             ((tMensaje*) mensaje_a_procesar)->cantidad++;
             ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;
@@ -121,7 +120,7 @@ void app_OAP(void* caller_ao, void* mensaje_a_procesar)
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
 
     app_inicializar_array_palabras(palabras);
-    
+
     app_extraer_palabras( palabras , (tMensaje*) mensaje_a_procesar );
 
     ((tMensaje*) mensaje_a_procesar)->cantidad = INDICE_CAMPO_DATOS;
@@ -141,8 +140,7 @@ void app_OAP(void* caller_ao, void* mensaje_a_procesar)
 
             /* Cargo en el mensaje el caracter correspondiente*/
             ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
-            /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
-            palabras[i][j] = 0; // TODO: Esto creo no hace falta. Estoy quemado para razonarlo ahora.
+
             /* Incremento el tamaño del paquete*/
             ((tMensaje*) mensaje_a_procesar)->cantidad++;
             ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;
@@ -181,8 +179,7 @@ void app_OAS(void* caller_ao, void* mensaje_a_procesar)
 
             /* Cargo en el mensaje el caracter correspondiente*/
             ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
-            /* Una vez cargado el caracter, lo reinicio para que el array palabras sea reutilizado*/
-            palabras[i][j] = 0; // TODO: Esto creo no hace falta. Estoy quemado para razonarlo ahora.
+
             /* Incremento el tamaño del paquete*/
             ((tMensaje*) mensaje_a_procesar)->cantidad++;
             ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;

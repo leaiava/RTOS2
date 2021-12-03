@@ -11,7 +11,7 @@
 #include "app_callbacks.h"
 #include "app.h"
 
-static bool app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaje* mensaje );
+static void app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaje* mensaje );
 static void app_inicializar_array_palabras(uint8_t (*palabras)[CANT_LETRAS_MAX]);
 static bool app_validar_paquete( tMensaje* mensaje );
 static void app_insertar_mensaje_error(uint8_t error_type, tMensaje* mensaje );
@@ -249,19 +249,12 @@ static bool app_validar_paquete( tMensaje* mensaje )
     return true;
 }
 
-static bool app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaje* mensaje )
+static void app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaje* mensaje )
 {
     uint32_t palabra = PALABRA_INICIAL;
     uint32_t caracter = CARACTER_INICIAL;
     
-    /* Si el caracter final es guion bajo o espacio salgo con error*/       // R_C3_9
-    if ( (mensaje->ptr_datos[mensaje->cantidad -1] == ' ') || (mensaje->ptr_datos[mensaje->cantidad -1] == '_') )
-        {
-            //handler_app->error_type = ERROR_INVALID_DATA;
-            return false;
-        }
-
-    /* Recorro todo el mensaje para extraer las palabras y verifico que los caracteres sean válidos. */
+    /* Recorro todo el mensaje para extraer las palabras */
     for ( uint32_t i = INDICE_CAMPO_DATOS; i < mensaje->cantidad ; i++)
     {
         /* Si el caracter está entre 'A' y 'Z' lo convierto a minúscula y lo copio en el array de palabras. */
@@ -270,13 +263,6 @@ static bool app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaj
                 /* Si no es la primer palabra o el primer carácter, cambio de palabra. */
                 if ((caracter != CARACTER_INICIAL))
                 {
-                    /* Verifico que la palabra tenga la cantidad de letras mínimas*/    // R_C3_4
-                    if (caracter < CANT_LETRAS_MIN)
-                    {
-                        //handler_app->error_type = ERROR_INVALID_DATA;
-                        app_inicializar_array_palabras(palabras);
-                        return false;
-                    }
                     palabra++;                   // Incremento para cambiar de palabra.
                     caracter = CARACTER_INICIAL; // Cambio al caracter inicial de la palabra.
                 }
@@ -293,51 +279,14 @@ static bool app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaj
         /* Si el caracter es guion bajo o espacio cambio de palabra. */ 
         else if ( (mensaje->ptr_datos[i] == '_' ) || (mensaje->ptr_datos[i] == ' ' ) )
         {
-            /* Si hay 2 guiones bajos o espacios seguidos salgo con error*/             // R_C3_8
-            if (mensaje->ptr_datos[i] == mensaje->ptr_datos[i+1])
-                {
-                    //handler_app->error_type = ERROR_INVALID_DATA;
-                    app_inicializar_array_palabras(palabras);
-                    return false;
-                }            
             /* Si el caracter no es el inicial salto de palabra.*/
             if (caracter != CARACTER_INICIAL)
             {
-                /* Verifico que la palabra tenga la cantidad de letras mínimas*/    // R_C3_4
-                if (caracter < CANT_LETRAS_MIN)
-                {
-                    //handler_app->error_type = ERROR_INVALID_DATA;
-                    app_inicializar_array_palabras(palabras);
-                    return false;
-                }
                 palabra++;                   // Incremento para cambiar de palabra.
                 caracter = CARACTER_INICIAL; // Cambio al caracter inicial de la palabra.
             }
         }
-        /* Si no era un caracter, o guion bajo o espacio, marco el error y salgo. */
-        else
-        {
-            //handler_app->error_type = ERROR_INVALID_DATA;
-            app_inicializar_array_palabras(palabras);
-            return false;
-        }
-        /* Si llegue a la cantidad máxima de palabras o caracteres, marco el error y salgo*/
-        if ( (caracter > CANT_LETRAS_MAX) || (palabra == CANT_PALABRAS_MAX))
-        {
-            //handler_app->error_type = ERROR_INVALID_DATA;
-            app_inicializar_array_palabras(palabras);
-            return false;
-        }
     }
-    /* Verifico que la  cantidad de palabras que llegaron se mayor que las mínimas definidas.*/ // R_C3_2
-    if (palabra < CANT_PALABRAS_MIN -1)
-        {
-            //handler_app->error_type = ERROR_INVALID_DATA;
-            app_inicializar_array_palabras(palabras);
-            return false;
-        }
-        
-    return true;
 }
 
 static void app_inicializar_array_palabras(uint8_t (*palabras)[CANT_LETRAS_MAX])

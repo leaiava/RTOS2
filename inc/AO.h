@@ -24,13 +24,6 @@ typedef void ( *callBackActObj_t )( void* caller_ao, void* data );
 
 typedef struct
 {
-    char* string;
-    int size;
-    QueueHandle_t colaCapa3;
-} activeObjectResponse_t;
-
-typedef struct
-{
     TaskFunction_t 		taskName;
     QueueHandle_t 		activeObjectQueue;
     QueueHandle_t 		responseQueue;
@@ -50,6 +43,6 @@ void activeObjectTask( void* pvParameters );
 
 void activeObjectEnqueue( activeObject_t* ao, void* value );
 void activeObjectEnqueueResponse( activeObject_t* ao, void* value );
-void activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue );
+bool activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue );
 
 #endif /* AO_H__ */

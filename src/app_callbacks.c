@@ -24,6 +24,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
         if (app_validar_paquete( (tMensaje*) mensaje_a_procesar ) == false )                            // R_AO_3
         {
             app_insertar_mensaje_error( ERROR_INVALID_DATA , mensaje_a_procesar );
+            activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
         }
         else switch( ((tMensaje*)mensaje_a_procesar)->ptr_datos[INDICE_CAMPO_C] ) // R_C3_12
     	{
@@ -31,9 +32,11 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             if ( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C)->itIsAlive == false )
             {
             	// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-				activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C , app_OAC, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola );
+				if( activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C , app_OAC, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola ) == false )
+                {
+                    app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
+                }
 			}
-
             // Y enviamos el dato a la cola para procesar.
             activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C), mensaje_a_procesar);
                                 
@@ -41,11 +44,13 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             
             case 'P':                       // A PascalCase
             if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P)->itIsAlive == false )
-				{
-					// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-					activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P , app_OAP, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola );
-				}
-
+            {
+                // Se crea el objeto activo, con el comando correspondiente y tarea asociada.
+                if( activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P , app_OAP, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola ) == false )
+                {
+                    app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
+                }
+            }
             // Y enviamos el dato a la cola para procesar.
             activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P), mensaje_a_procesar);
 
@@ -53,11 +58,13 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             
             case 'S':                       // A snake_case
             if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S)->itIsAlive == false)
-				{
-					// Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-            		activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S , app_OAS, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola );
-				}
-
+            {
+                // Se crea el objeto activo, con el comando correspondiente y tarea asociada.
+                if( activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S , app_OAS, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola ) == false )
+                {
+                    app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
+                }
+            }
             // Y enviamos el dato a la cola para procesar.
             activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S), mensaje_a_procesar);
 
@@ -156,7 +163,7 @@ void app_OAS(void* caller_ao, void* mensaje_a_procesar)
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
 
     app_inicializar_array_palabras(palabras);
-    
+
     app_extraer_palabras( palabras , (tMensaje*) mensaje_a_procesar );
     
     ((tMensaje*) mensaje_a_procesar)->cantidad = INDICE_CAMPO_DATOS;

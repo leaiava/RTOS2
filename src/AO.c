@@ -105,10 +105,13 @@ void activeObjectEnqueueResponse( activeObject_t* ao, void* value )
     xQueueSend( ao->responseQueue, value, 0 );
 }
 
-void activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue )
+bool activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue )
 {
     /* cargo miembro que no estaba */
     ao->responseQueue= response_queue;
     /* creo oa padre */
-    activeObjectCreate( ao, callback, taskForAO );
+    if (activeObjectCreate( ao, callback, taskForAO ) == false)
+        return false;
+    else
+        return true;
 }

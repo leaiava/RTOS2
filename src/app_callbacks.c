@@ -16,6 +16,15 @@ static void app_inicializar_array_palabras(uint8_t (*palabras)[CANT_LETRAS_MAX])
 static bool app_validar_paquete( tMensaje* mensaje );
 static void app_insertar_mensaje_error(uint8_t error_type, tMensaje* mensaje );
 
+/**
+ * @brief   Callback para el OA_app. Recibe dos tipos de evento, uno de paquete a procesar y otro de paquete procesado
+ *          Cuando llega un paquete a procesar valida el paquete y si es correcto de acuerdo al campo C, deriva el 
+ *          paquete al OA activo correspondiente para que lo procese. Si el OA no existe lo crea.
+ *          Cuando llega un paquete procesado lo devuelve a la capa 2.
+ * 
+ * @param caller_ao             Estructura del OA
+ * @param mensaje_a_procesar    Paquete con el mensaje a procesar.
+ */
 void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 {
     /* Verifico si es un evento proveniente del driver que signifique “llegó un paquete procesar”. */    // R_AO_2
@@ -86,6 +95,12 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
     
 }
 
+/**
+ * @brief  Callback para el OA que se encarga de formatear el mensaje en camelCase
+ * 
+ * @param caller_ao             Estructura del OA
+ * @param mensaje_a_procesar    Paquete con el mensaje a procesar.
+ */
 void app_OAC(void* caller_ao, void* mensaje_a_procesar)
 {
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
@@ -122,6 +137,12 @@ activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
 
 }
 
+/**
+ * @brief  Callback para el OA que se encarga de formatear el mensaje en PascalCase
+ * 
+ * @param caller_ao             Estructura del OA
+ * @param mensaje_a_procesar    Paquete con el mensaje a procesar.
+ */
 void app_OAP(void* caller_ao, void* mensaje_a_procesar)
 {
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
@@ -158,6 +179,12 @@ void app_OAP(void* caller_ao, void* mensaje_a_procesar)
 
 }
 
+/**
+ * @brief  Callback para el OA que se encarga de formatear el mensaje en snake_case
+ * 
+ * @param caller_ao             Estructura del OA
+ * @param mensaje_a_procesar    Paquete con el mensaje a procesar.
+ */
 void app_OAS(void* caller_ao, void* mensaje_a_procesar)
 {
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
@@ -197,6 +224,13 @@ void app_OAS(void* caller_ao, void* mensaje_a_procesar)
 
 }
 
+/**
+ * @brief Función interna para validar el paquete a nivel de C3
+ * 
+ * @param mensaje   Mensaje a validar
+ * @return true     Si el mensaje es correcto
+ * @return false    Si el mensaje es incorrecto
+ */
 static bool app_validar_paquete( tMensaje* mensaje )
 {
     uint32_t palabra = PALABRA_INICIAL;
@@ -253,6 +287,12 @@ static bool app_validar_paquete( tMensaje* mensaje )
     return true;
 }
 
+/**
+ * @brief Extrae las palabras del mensaje y las guarda en una matriz.
+ * 
+ * @param mensaje   Mensaje a procesar
+ * @param palabras  Matriz para guardar las palabras
+ */
 static void app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaje* mensaje )
 {
     uint32_t palabra = PALABRA_INICIAL;
@@ -293,6 +333,11 @@ static void app_extraer_palabras( uint8_t (*palabras)[CANT_LETRAS_MAX] , tMensaj
     }
 }
 
+/**
+ * @brief Inicializa la matriz de palabras.
+ * 
+ * @param palabras Matriz de palabras a inicializar 
+ */
 static void app_inicializar_array_palabras(uint8_t (*palabras)[CANT_LETRAS_MAX])
 {
     for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
@@ -302,8 +347,12 @@ static void app_inicializar_array_palabras(uint8_t (*palabras)[CANT_LETRAS_MAX])
         }
 }
 
-
-
+/**
+ * @brief       Inserta el mensaje de erro
+ * 
+ * @param error_type    Tipo de error
+ * @param mensaje       Puntero al mensaje donde insertar el error
+ */
 static void app_insertar_mensaje_error(uint8_t error_type, tMensaje* mensaje )      // R_C3_13
 {
     uint8_t pos = 0;

@@ -96,13 +96,19 @@ void activeObjectTask( void* pvParameters )
 void activeObjectEnqueue( activeObject_t* ao, void* value )
 {
     // Y lo enviamos a la cola.
-    xQueueSend( ao->activeObjectQueue, value, 0 );
+    if(xQueueSend( ao->activeObjectQueue, value, 0 ) != pdPASS)
+    {
+    	while(1);
+    }
 }
 
 void activeObjectEnqueueResponse( activeObject_t* ao, void* value )
 {
     // Y lo enviamos a la cola.
-    xQueueSend( ao->responseQueue, value, 0 );
+    if(xQueueSend( ao->responseQueue, value, 0 ) != pdPASS)
+    {
+		while(1);
+	}
 }
 
 bool activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue )

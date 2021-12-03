@@ -31,8 +31,9 @@ typedef struct
     tMensaje mensaje;                      ///< Mensaje a recibirse a través del objeto.
     void *prt_pool;                        ///< Puntero al pool de memoria.
     QMPool pool_memoria;                   ///< Memory pool (contienen la información que necesita la biblioteca qmpool.h)
-    TimerHandle_t timer;                   ///< Timer
-    TickType_t periodo_timer;              ///< Periodo del timer
+    TimerHandle_t timerRx;                 ///< TimerRx
+    TimerHandle_t timerTx;                 ///< TimerTx
+    TickType_t periodo_timerRx;              ///< Periodo del timer
 } sf_t;
 
 sf_t* sf_crear(void);

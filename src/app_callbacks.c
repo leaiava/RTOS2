@@ -67,8 +67,6 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             {
                 app_insertar_mensaje_error( ERROR_INVALID_OPCODE , mensaje_a_procesar );
                 activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
-                uartCallbackSet(((activeObject_t*)caller_ao )->handler_app->handler_sf->uart, UART_TRANSMITER_FREE, sf_tx_isr, ((activeObject_t*)caller_ao )->handler_app->handler_sf);
-                uartSetPendingInterrupt(((activeObject_t*)caller_ao )->handler_app->handler_sf->uart);
             }
             
         }
@@ -77,8 +75,6 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
     if ( ((tMensaje*)mensaje_a_procesar)->evento_tipo == RESPUESTA)
     {
     	activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
-    	uartCallbackSet(((activeObject_t*)caller_ao )->handler_app->handler_sf->uart, UART_TRANSMITER_FREE, sf_tx_isr, ((activeObject_t*)caller_ao )->handler_app->handler_sf);
-    	uartSetPendingInterrupt(((activeObject_t*)caller_ao )->handler_app->handler_sf->uart);
     }
     
 }

@@ -75,21 +75,31 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
 	uartConfig(handler->uart, handler->baudRate);
 	uartCallbackSet(handler->uart, UART_RECEIVE, sf_rx_isr, handler);
 
-    handler->periodo_timer = TIMEOUT;
+    handler->periodo_timerRx = TIMEOUT;
 
-    handler->timer = xTimerCreate(
-                    "Timer",
-                    handler->periodo_timer, //Timeout
+    handler->timerRx = xTimerCreate(
+                    "TimerRx",
+                    handler->periodo_timerRx, //Timeout
                     pdFALSE,                //One-shot
                     handler,                //Estructura de datos que llega al callback
                     timer_callback
     );
 
-    configASSERT(handler->timer != NULL);
+    configASSERT(handler->timerRx != NULL);
     // Habilito interrupciónes de UART
     uartInterrupt(handler->uart, UART_IE);
 
-	return true;
+    handler->timerTx = xTimerCreate(
+						"TimerTx",
+						TIMEOUT, //Timeout
+						pdTRUE,                 //AutoReload
+						handler,                //Estructura de datos que llega al callback
+						timer_callback
+						);
+    configASSERT(handler->timerTx != NULL);
+    BaseType_t res = xTimerStart( handler->timerTx, NULL );
+    configASSERT(res == pdPASS);
+    return true;
 }
 
 /**
@@ -119,18 +129,18 @@ static bool sf_recibir_byte(sf_t* handler, uint8_t byte_recibido)
 		}
 		if (handler->SOM  )
 		{
-			xTimerStartFromISR(handler->timer, &xHigherPriorityTaskWoken);         // R_C2_18
+			xTimerStartFromISR(handler->timerRx, &xHigherPriorityTaskWoken);         // R_C2_18
 			handler->buffer[handler->cantidad] = byte_recibido;	// R_C2_6
 			handler->cantidad++;
 			if (byte_recibido == EOM_BYTE)	// R_C2_3
 			{
-				xTimerStopFromISR(handler->timer, &xHigherPriorityTaskWoken);    // Si se recibe EOM detiene el timer
+				xTimerStopFromISR(handler->timerRx, &xHigherPriorityTaskWoken);    // Si se recibe EOM detiene el timer
 				handler->EOM = true;
 				resp = true;
 			}
 			if((handler->cantidad == MSG_MAX_SIZE) && (handler->EOM == false)) // R_C2_7 Si llegue al maximo tamaño de paquete y no recibí el EOM reinicio
 			{
-				xTimerStopFromISR(handler->timer, &xHigherPriorityTaskWoken);
+				xTimerStopFromISR(handler->timerRx, &xHigherPriorityTaskWoken);
 				handler->cantidad = 0;
 				handler->SOM = false;
 			}
@@ -410,8 +420,14 @@ void sf_tx_isr( void *parametro )
 static void timer_callback(TimerHandle_t xTimer)
 {
     sf_t* handler = (sf_t*)pvTimerGetTimerID(xTimer);
-    if (xTimer == handler->timer)                       // R_C2_17
+    if (xTimer == handler->timerRx)                       // R_C2_17
     {
         sf_reiniciar_mensaje(handler);
     }
+    if (xTimer == handler->timerTx)
+	{
+    	uartCallbackSet(handler->uart, UART_TRANSMITER_FREE, sf_tx_isr, handler);
+		uartSetPendingInterrupt(handler->uart);
+	}
 }
+

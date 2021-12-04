@@ -27,70 +27,76 @@ static void app_insertar_mensaje_error(uint8_t error_type, tMensaje* mensaje );
  */
 void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 {
+    activeObject_t* ptr_me = (activeObject_t*) caller_ao;
+    activeObject_t* ptr_OA_C = (activeObject_t*)ptr_me->ptr_OA_C;
+    activeObject_t* ptr_OA_P = (activeObject_t*)ptr_me->ptr_OA_P;
+    activeObject_t* ptr_OA_S = (activeObject_t*)ptr_me->ptr_OA_S;
+    uint32_t evt = ((tMensaje*)mensaje_a_procesar)->evento_tipo;
+    
     /* Verifico si es un evento proveniente del driver que signifique “llegó un paquete procesar”. */    // R_AO_2
-    if ( ((tMensaje*)mensaje_a_procesar)->evento_tipo == PAQUETE)
+    if ( evt == PAQUETE)
     {
         if (app_validar_paquete( (tMensaje*) mensaje_a_procesar ) == false )                            // R_AO_3
         {
             app_insertar_mensaje_error( ERROR_INVALID_DATA , mensaje_a_procesar );
-            activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
+            activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
         }
         else switch( ((tMensaje*)mensaje_a_procesar)->ptr_datos[INDICE_CAMPO_C] ) // R_C3_12
     	{
             case 'C':
-            if ( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C)->itIsAlive == false )
+            if ( ptr_OA_C->itIsAlive == false )
             {
             	// Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
-				if( activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C , app_OAC, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola ) == false )
+				if( activeObjectOperationCreate( ptr_OA_C , app_OAC, activeObjectTask, ptr_me->handler_app->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
                 }
 			}
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_C), mensaje_a_procesar);
+            activeObjectEnqueue( ptr_OA_C, mensaje_a_procesar);
                                 
             break; 
             
             case 'P':                       // A PascalCase
-            if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P)->itIsAlive == false )
+            if( ptr_OA_P->itIsAlive == false )
             {
                 // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
-                if( activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P , app_OAP, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola ) == false )
+                if( activeObjectOperationCreate( ptr_OA_P , app_OAP, activeObjectTask, ptr_me->handler_app->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
                 }
             }
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_P), mensaje_a_procesar);
+            activeObjectEnqueue( ptr_OA_P, mensaje_a_procesar);
 
             break;
             
             case 'S':                       // A snake_case
-            if(  ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S)->itIsAlive == false)
+            if( ptr_OA_S->itIsAlive == false)
             {
                 // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
-                if( activeObjectOperationCreate( (activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S , app_OAS, activeObjectTask, ((activeObject_t*)caller_ao)->handler_app->handler_sf->ptr_objeto1->cola ) == false )
+                if( activeObjectOperationCreate( ptr_OA_S , app_OAS, activeObjectTask, ptr_me->handler_app->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
                 }
             }
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( ((activeObject_t*)((activeObject_t*)caller_ao)->ptr_OA_S), mensaje_a_procesar);
+            activeObjectEnqueue( ptr_OA_S, mensaje_a_procesar);
 
             break; // Para salir del case.
             
             default:                                                // R_C3_6 - R_C3_11
             {
                 app_insertar_mensaje_error( ERROR_INVALID_OPCODE , mensaje_a_procesar );
-                activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
+                activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
             }
             
         }
     }
     /* Verifico si el mensaje que llego es un evento con la respuesta procesada*/       //R_AO_2
-    if ( ((tMensaje*)mensaje_a_procesar)->evento_tipo == RESPUESTA)
+    if ( evt == RESPUESTA)
     {
-    	activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar ); //R_AO_4
+    	activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar ); //R_AO_4
     }
     
 }

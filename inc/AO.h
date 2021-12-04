@@ -16,7 +16,7 @@
 #include "task.h"
 #include "queue.h"
 #include "sapi.h"
-#include "app.h"
+#include "separacion_frames.h"
 
 #define N_QUEUE_AO 		10
 
@@ -28,13 +28,13 @@ typedef struct
     QueueHandle_t 		activeObjectQueue;
     QueueHandle_t 		responseQueue;
     callBackActObj_t 	callbackFunc;
-    app_t*              handler_app;
+    sf_t*               ptr_sf;
     void*               ptr_OA_C;
     void*               ptr_OA_P;
     void*               ptr_OA_S;
     bool 				itIsAlive;
     bool                itIsImmortal;
-    
+
 } activeObject_t;
 
 bool activeObjectCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO );
@@ -44,5 +44,6 @@ void activeObjectTask( void* pvParameters );
 void activeObjectEnqueue( activeObject_t* ao, void* value );
 void activeObjectEnqueueResponse( activeObject_t* ao, void* value );
 bool activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue );
+void activeObjectQueueChange( activeObject_t* ao, QueueHandle_t activeObjectNewQueue );
 
 #endif /* AO_H__ */

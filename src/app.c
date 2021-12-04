@@ -9,14 +9,7 @@
  *===========================================================================*/
 
 #include "app.h"
-#include "AO.h"
 #include "app_callbacks.h"
-
-activeObject_t OA_app;
-activeObject_t OA_C;
-activeObject_t OA_P;
-activeObject_t OA_S;
-
 /**
  * @brief Asigna memoria para una estructura de app, la inicializa y crea el OA_app.
  * 
@@ -30,34 +23,41 @@ bool app_crear(app_t* handler_app , sf_t* handler_sf)
 	if ( handler_sf != NULL )
     {
         handler_app = pvPortMalloc(sizeof(app_t));
+        handler_app->ptr_OA_app = pvPortMalloc(sizeof(activeObject_t));
+        handler_app->ptr_OA_C = pvPortMalloc(sizeof(activeObject_t));
+        handler_app->ptr_OA_P = pvPortMalloc(sizeof(activeObject_t));
+        handler_app->ptr_OA_S = pvPortMalloc(sizeof(activeObject_t));
         configASSERT(handler_app != NULL);
-        
-        handler_app->handler_sf = handler_sf;
-        handler_app->error_type = SIN_ERROR;
-        
-	    OA_app.itIsAlive = false;
-        OA_app.itIsImmortal = true;
-        OA_app.handler_app = handler_app;
-        OA_app.ptr_OA_C = &OA_C;
-        OA_app.ptr_OA_P = &OA_P;
-        OA_app.ptr_OA_S = &OA_S;
+        configASSERT(handler_app->ptr_OA_app != NULL);
+        configASSERT(handler_app->ptr_OA_C != NULL);
+        configASSERT(handler_app->ptr_OA_P != NULL);
+        configASSERT(handler_app->ptr_OA_S != NULL);
 
-        OA_C.itIsAlive = false;
-        OA_C.itIsImmortal = false;
-        OA_C.handler_app = handler_app;
-
-	    OA_P.itIsAlive = false;
-        OA_P.itIsImmortal = false;
-        OA_P.handler_app = handler_app;
+        /* Inicializo el OA_app*/ 
+        handler_app->ptr_OA_app->ptr_sf = handler_sf;
+	    handler_app->ptr_OA_app->itIsAlive = false;
+        handler_app->ptr_OA_app->itIsImmortal = true; // El OA_app no debe morir nunca.
         
-	    OA_S.itIsAlive = false;
-        OA_S.itIsImmortal = false;
-        OA_S.handler_app = handler_app;
+        /* Cargo los punteros de los OA de procesamiento en el OA_app*/
+        handler_app->ptr_OA_app->ptr_OA_C = handler_app->ptr_OA_C;
+        handler_app->ptr_OA_app->ptr_OA_P = handler_app->ptr_OA_P;
+        handler_app->ptr_OA_app->ptr_OA_S = handler_app->ptr_OA_S;
 
+        handler_app->ptr_OA_C->itIsAlive = false;
+        handler_app->ptr_OA_C->itIsImmortal = false;
+        
+        handler_app->ptr_OA_P->itIsAlive = false;
+        handler_app->ptr_OA_P->itIsImmortal = false;
+        
+        handler_app->ptr_OA_S->itIsAlive = false;
+        handler_app->ptr_OA_S->itIsImmortal = false;
+        
         // Se crea el objeto activo, con el comando correspondiente y tarea asociada.
-        activeObjectOperationCreate( &OA_app, app_OAapp, activeObjectTask , handler_sf->ptr_objeto2->cola);
+        activeObjectOperationCreate( handler_app->ptr_OA_app, app_OAapp, activeObjectTask , handler_sf->ptr_objeto2->cola);
 
-        OA_app.activeObjectQueue = handler_sf->ptr_objeto1->cola;
+        /* Cargo cola para recibir los paquetes provenientes de C2*/ 
+        activeObjectQueueChange(handler_app->ptr_OA_app , handler_sf->ptr_objeto1->cola);
+        
   
         return true;
     }

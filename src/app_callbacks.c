@@ -47,7 +47,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             if ( ptr_OA_C->itIsAlive == false )
             {
             	// Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
-				if( activeObjectOperationCreate( ptr_OA_C , app_OAC, activeObjectTask, ptr_me->handler_app->handler_sf->ptr_objeto1->cola ) == false )
+				if( activeObjectOperationCreate( ptr_OA_C , app_OAC, activeObjectTask, ptr_me->ptr_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
                     activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
@@ -63,7 +63,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             if( ptr_OA_P->itIsAlive == false )
             {
                 // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
-                if( activeObjectOperationCreate( ptr_OA_P , app_OAP, activeObjectTask, ptr_me->handler_app->handler_sf->ptr_objeto1->cola ) == false )
+                if( activeObjectOperationCreate( ptr_OA_P , app_OAP, activeObjectTask, ptr_me->ptr_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
                     activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
@@ -79,7 +79,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             if( ptr_OA_S->itIsAlive == false)
             {
                 // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
-                if( activeObjectOperationCreate( ptr_OA_S , app_OAS, activeObjectTask, ptr_me->handler_app->handler_sf->ptr_objeto1->cola ) == false )
+                if( activeObjectOperationCreate( ptr_OA_S , app_OAS, activeObjectTask, ptr_me->ptr_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
                     activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );

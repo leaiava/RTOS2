@@ -121,3 +121,10 @@ bool activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback,
     else
         return true;
 }
+void activeObjectQueueChange( activeObject_t* ao, QueueHandle_t activeObjectNewQueue )
+{
+    // Borramos la cola del objeto activo.
+    vQueueDelete( ao->activeObjectQueue );
+
+    ao->activeObjectQueue = activeObjectNewQueue;
+}

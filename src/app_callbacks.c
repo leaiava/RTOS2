@@ -50,6 +50,8 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 				if( activeObjectOperationCreate( ptr_OA_C , app_OAC, activeObjectTask, ptr_me->handler_app->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
+                    activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
+                    break;
                 }
 			}
             // Y enviamos el dato a la cola para procesar.
@@ -64,6 +66,8 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
                 if( activeObjectOperationCreate( ptr_OA_P , app_OAP, activeObjectTask, ptr_me->handler_app->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
+                    activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
+					break;
                 }
             }
             // Y enviamos el dato a la cola para procesar.
@@ -78,6 +82,8 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
                 if( activeObjectOperationCreate( ptr_OA_S , app_OAS, activeObjectTask, ptr_me->handler_app->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
+                    activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
+					break;
                 }
             }
             // Y enviamos el dato a la cola para procesar.

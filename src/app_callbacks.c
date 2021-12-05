@@ -40,6 +40,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
         {
             app_insertar_mensaje_error( ERROR_INVALID_DATA , mensaje_a_procesar );
             activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
+            sf_setOn_tx_isr(ptr_me->ptr_sf);
         }
         else switch( ((tMensaje*)mensaje_a_procesar)->ptr_datos[INDICE_CAMPO_C] ) // R_C3_12
     	{
@@ -51,6 +52,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
                     activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
+                    sf_setOn_tx_isr(ptr_me->ptr_sf);
                     break;
                 }
 			}
@@ -67,7 +69,8 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
                     activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
-					break;
+                    sf_setOn_tx_isr(ptr_me->ptr_sf);
+                    break;
                 }
             }
             // Y enviamos el dato a la cola para procesar.
@@ -83,7 +86,8 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
                     activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
-					break;
+                    sf_setOn_tx_isr(ptr_me->ptr_sf);
+                    break;
                 }
             }
             // Y enviamos el dato a la cola para procesar.
@@ -95,6 +99,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             {
                 app_insertar_mensaje_error( ERROR_INVALID_OPCODE , mensaje_a_procesar );
                 activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
+                sf_setOn_tx_isr(ptr_me->ptr_sf);
             }
             
         }
@@ -103,6 +108,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
     if ( evt == RESPUESTA)
     {
     	activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar ); //R_AO_4
+        sf_setOn_tx_isr(ptr_me->ptr_sf);
     }
     
 }

@@ -28,7 +28,7 @@ bool activeObjectCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunc
         ao->callbackFunc = callback;
 
         // Creamos la tarea asociada al objeto activo. A la tarea se le pasar� el objeto activo como par�metro.
-        retValue = xTaskCreate( ao->taskName, ( const char * )"Task For AO", configMINIMAL_STACK_SIZE*2, ao, tskIDLE_PRIORITY+2, NULL );
+        retValue = xTaskCreate( ao->taskName, ( const char * )"Task For AO", configMINIMAL_STACK_SIZE, ao, tskIDLE_PRIORITY+2, NULL );
     }
 
     // Chequeamos si la tarea se cre� correctamente o no.
@@ -88,7 +88,7 @@ void activeObjectTask( void* pvParameters )
 
             // Y finalmente tenemos que eliminar la tarea asociada (suicidio).
             vTaskDelete( NULL );
-
+            
         }
     }
 }

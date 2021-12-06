@@ -27,88 +27,85 @@ static void app_insertar_mensaje_error(uint8_t error_type, tMensaje* mensaje );
  */
 void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 {
-    activeObject_t* ptr_me = (activeObject_t*) caller_ao;
-    activeObject_t* ptr_OA_C = (activeObject_t*)ptr_me->ptr_OA_C;
-    activeObject_t* ptr_OA_P = (activeObject_t*)ptr_me->ptr_OA_P;
-    activeObject_t* ptr_OA_S = (activeObject_t*)ptr_me->ptr_OA_S;
-    uint32_t evt = ((tMensaje*)mensaje_a_procesar)->evento_tipo;
+    app_t* ptr_me = (app_t*) caller_ao; // Recibo por herencia el puntero a la estructura app_t
+    tMensaje* mensaje = (tMensaje*) mensaje_a_procesar;
     
     /* Verifico si es un evento proveniente del driver que signifique “llegó un paquete procesar”. */    // R_AO_2
-    if ( evt == PAQUETE)
+    if ( mensaje->evento_tipo == PAQUETE)
     {
-        if (app_validar_paquete( (tMensaje*) mensaje_a_procesar ) == false )                            // R_AO_3
+        if (app_validar_paquete( mensaje ) == false )                            // R_AO_3
         {
-            app_insertar_mensaje_error( ERROR_INVALID_DATA , mensaje_a_procesar );
-            activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
-            sf_setOn_tx_isr(ptr_me->ptr_sf);
+            app_insertar_mensaje_error( ERROR_INVALID_DATA , mensaje );
+            xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
+            sf_setOn_tx_isr(ptr_me->handler_sf);
         }
-        else switch( ((tMensaje*)mensaje_a_procesar)->ptr_datos[INDICE_CAMPO_C] ) // R_C3_12
+        else switch( mensaje->ptr_datos[INDICE_CAMPO_C] ) // R_C3_12
     	{
             case 'C':
-            if ( ptr_OA_C->itIsAlive == false )
+            if ( ptr_me->OA_C.itIsAlive == false )
             {
             	// Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
-				if( activeObjectOperationCreate( ptr_OA_C , app_OAC, activeObjectTask, ptr_me->ptr_sf->ptr_objeto1->cola ) == false )
+				if( activeObjectOperationCreate( &ptr_me->OA_C , app_OAC, activeObjectTask, ptr_me->handler_sf->ptr_objeto1->cola ) == false )
                 {
-                    app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
-                    activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
-                    sf_setOn_tx_isr(ptr_me->ptr_sf);
+                    app_insertar_mensaje_error( ERROR_SYSTEM , mensaje ); // R_AO_9
+                    xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
+                    sf_setOn_tx_isr(ptr_me->handler_sf);
                     break;
                 }
 			}
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( ptr_OA_C, mensaje_a_procesar);
+            activeObjectEnqueue( &ptr_me->OA_C, mensaje);
                                 
             break; 
             
             case 'P':                       // A PascalCase
-            if( ptr_OA_P->itIsAlive == false )
+            if( ptr_me->OA_P.itIsAlive == false )
             {
                 // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
-                if( activeObjectOperationCreate( ptr_OA_P , app_OAP, activeObjectTask, ptr_me->ptr_sf->ptr_objeto1->cola ) == false )
+                if( activeObjectOperationCreate( &ptr_me->OA_P , app_OAP, activeObjectTask, ptr_me->handler_sf->ptr_objeto1->cola ) == false )
                 {
-                    app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
-                    activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
-                    sf_setOn_tx_isr(ptr_me->ptr_sf);
+                    app_insertar_mensaje_error( ERROR_SYSTEM , mensaje ); // R_AO_9
+                    xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
+                    sf_setOn_tx_isr(ptr_me->handler_sf);
                     break;
                 }
             }
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( ptr_OA_P, mensaje_a_procesar);
+            activeObjectEnqueue( &ptr_me->OA_P, mensaje);
 
             break;
             
             case 'S':                       // A snake_case
-            if( ptr_OA_S->itIsAlive == false)
+            if( ptr_me->OA_S.itIsAlive == false)
             {
                 // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
-                if( activeObjectOperationCreate( ptr_OA_S , app_OAS, activeObjectTask, ptr_me->ptr_sf->ptr_objeto1->cola ) == false )
+                if( activeObjectOperationCreate( &ptr_me->OA_S , app_OAS, activeObjectTask, ptr_me->handler_sf->ptr_objeto1->cola ) == false )
                 {
-                    app_insertar_mensaje_error( ERROR_SYSTEM , mensaje_a_procesar ); // R_AO_9
-                    activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
-                    sf_setOn_tx_isr(ptr_me->ptr_sf);
+                    app_insertar_mensaje_error( ERROR_SYSTEM , mensaje ); // R_AO_9
+                    xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
+                    sf_setOn_tx_isr(ptr_me->handler_sf);
                     break;
                 }
             }
             // Y enviamos el dato a la cola para procesar.
-            activeObjectEnqueue( ptr_OA_S, mensaje_a_procesar);
+            activeObjectEnqueue( &ptr_me->OA_S, mensaje);
 
             break; // Para salir del case.
             
             default:                                                // R_C3_6 - R_C3_11
             {
-                app_insertar_mensaje_error( ERROR_INVALID_OPCODE , mensaje_a_procesar );
-                activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar );
-                sf_setOn_tx_isr(ptr_me->ptr_sf);
+                app_insertar_mensaje_error( ERROR_INVALID_OPCODE , mensaje );
+                xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
+                sf_setOn_tx_isr(ptr_me->handler_sf);
             }
             
         }
     }
     /* Verifico si el mensaje que llego es un evento con la respuesta procesada*/       //R_AO_2
-    if ( evt == RESPUESTA)
+    if ( mensaje->evento_tipo == RESPUESTA)
     {
-    	activeObjectEnqueueResponse( ptr_me ,  mensaje_a_procesar ); //R_AO_4
-        sf_setOn_tx_isr(ptr_me->ptr_sf);
+    	xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
+        sf_setOn_tx_isr(ptr_me->handler_sf);
     }
     
 }
@@ -121,13 +118,16 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
  */
 void app_OAC(void* caller_ao, void* mensaje_a_procesar)
 {
+    activeObject_t* ptr_me = (activeObject_t*)caller_ao;
+    tMensaje* mensaje = (tMensaje*) mensaje_a_procesar;
+
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
 
     app_inicializar_array_palabras(palabras);
 
-    app_extraer_palabras( palabras , (tMensaje*) mensaje_a_procesar );
+    app_extraer_palabras( palabras , mensaje );
 
-    ((tMensaje*) mensaje_a_procesar)->cantidad = INDICE_CAMPO_DATOS;
+    mensaje->cantidad = INDICE_CAMPO_DATOS;
     /* Bucle para recorrer todas las palabras*/ 
     for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
     {
@@ -143,16 +143,15 @@ void app_OAC(void* caller_ao, void* mensaje_a_procesar)
                 palabras[i][j] += A_MAYUSCULA;
             
             /* Cargo en el mensaje el caracter correspondiente*/ 
-            ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
+            mensaje->ptr_datos[mensaje->cantidad] = palabras[i][j];
 
             /* Incremento el tamaño del paquete*/
-            ((tMensaje*) mensaje_a_procesar)->cantidad++;
-            ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;
+            mensaje->cantidad++;
+            mensaje->evento_tipo = RESPUESTA;
         }
     }
     // Y enviamos el dato a la cola para procesar.
-activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar ); // R_AO_7
-
+    xQueueSend( ptr_me->responseQueue , mensaje, 0 );
 }
 
 /**
@@ -163,13 +162,16 @@ activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );
  */
 void app_OAP(void* caller_ao, void* mensaje_a_procesar)
 {
+    activeObject_t* ptr_me = (activeObject_t*)caller_ao;
+    tMensaje* mensaje = (tMensaje*) mensaje_a_procesar;
+
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
 
     app_inicializar_array_palabras(palabras);
 
-    app_extraer_palabras( palabras , (tMensaje*) mensaje_a_procesar );
+    app_extraer_palabras( palabras , mensaje );
 
-    ((tMensaje*) mensaje_a_procesar)->cantidad = INDICE_CAMPO_DATOS;
+    mensaje->cantidad = INDICE_CAMPO_DATOS;
     /* Bucle para recorrer todas las palabras*/
     for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
     {
@@ -185,15 +187,15 @@ void app_OAP(void* caller_ao, void* mensaje_a_procesar)
                 palabras[i][j] += A_MAYUSCULA;
 
             /* Cargo en el mensaje el caracter correspondiente*/
-            ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
+            mensaje->ptr_datos[mensaje->cantidad] = palabras[i][j];
 
             /* Incremento el tamaño del paquete*/
-            ((tMensaje*) mensaje_a_procesar)->cantidad++;
-            ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;
+            mensaje->cantidad++;
+            mensaje->evento_tipo = RESPUESTA;
         }
     }
     // Y enviamos el dato a la cola para procesar.
-    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar );  // R_AO_7
+    xQueueSend( ptr_me->responseQueue , mensaje, 0 );
 
 }
 
@@ -205,13 +207,16 @@ void app_OAP(void* caller_ao, void* mensaje_a_procesar)
  */
 void app_OAS(void* caller_ao, void* mensaje_a_procesar)
 {
+    activeObject_t* ptr_me = (activeObject_t*)caller_ao;
+    tMensaje* mensaje = (tMensaje*) mensaje_a_procesar;
+
     uint8_t palabras[CANT_PALABRAS_MAX][CANT_LETRAS_MAX];  ///> Array de strings para extraer las palabras del mensaje
 
     app_inicializar_array_palabras(palabras);
 
-    app_extraer_palabras( palabras , (tMensaje*) mensaje_a_procesar );
+    app_extraer_palabras( palabras , mensaje );
     
-    ((tMensaje*) mensaje_a_procesar)->cantidad = INDICE_CAMPO_DATOS;
+    mensaje->cantidad = INDICE_CAMPO_DATOS;
     /* Bucle para recorrer todas las palabras*/
     for (uint32_t i = 0 ; i < CANT_PALABRAS_MAX ; i++)
     {
@@ -225,20 +230,20 @@ void app_OAS(void* caller_ao, void* mensaje_a_procesar)
             /* A partir de la segunda palabra, inserto un '_' al inicio */
             if ( (i > 0) && (j == 0) )
                 {
-            	 ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = '_';
-                    ((tMensaje*) mensaje_a_procesar)->cantidad++;
+            	mensaje->ptr_datos[mensaje->cantidad] = '_';
+            	mensaje->cantidad++;
                 }
 
             /* Cargo en el mensaje el caracter correspondiente*/
-            ((tMensaje*) mensaje_a_procesar)->ptr_datos[((tMensaje*) mensaje_a_procesar)->cantidad] = palabras[i][j];
+            mensaje->ptr_datos[mensaje->cantidad] = palabras[i][j];
 
             /* Incremento el tamaño del paquete*/
-            ((tMensaje*) mensaje_a_procesar)->cantidad++;
-            ((tMensaje*) mensaje_a_procesar)->evento_tipo = RESPUESTA;
+            mensaje->cantidad++;
+            mensaje->evento_tipo = RESPUESTA;
         }
     }
     // Y enviamos el dato a la cola para procesar.
-    activeObjectEnqueueResponse( (activeObject_t*)caller_ao ,  mensaje_a_procesar ); // R_AO_7
+    xQueueSend( ptr_me->responseQueue , mensaje, 0 );
 
 }
 

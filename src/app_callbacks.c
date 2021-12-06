@@ -42,6 +42,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
         else switch( mensaje->ptr_datos[INDICE_CAMPO_C] ) // R_C3_12
     	{
             case 'C':
+            taskENTER_CRITICAL();
             if ( ptr_me->OA_C.itIsAlive == false )
             {
             	// Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
@@ -55,10 +56,12 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 			}
             // Y enviamos el dato a la cola para procesar.
             activeObjectEnqueue( &ptr_me->OA_C, mensaje);
-                                
+            taskEXIT_CRITICAL();
+
             break; 
             
             case 'P':                       // A PascalCase
+            taskENTER_CRITICAL();
             if( ptr_me->OA_P.itIsAlive == false )
             {
                 // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
@@ -72,10 +75,12 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             }
             // Y enviamos el dato a la cola para procesar.
             activeObjectEnqueue( &ptr_me->OA_P, mensaje);
+            taskEXIT_CRITICAL();
 
             break;
             
             case 'S':                       // A snake_case
+            taskENTER_CRITICAL();
             if( ptr_me->OA_S.itIsAlive == false)
             {
                 // Se crea el objeto activo, con el comando correspondiente y tarea asociada.       //R_AO_5 R_AO_6
@@ -89,6 +94,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             }
             // Y enviamos el dato a la cola para procesar.
             activeObjectEnqueue( &ptr_me->OA_S, mensaje);
+            taskEXIT_CRITICAL();
 
             break; // Para salir del case.
             

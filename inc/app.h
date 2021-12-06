@@ -35,11 +35,11 @@
 
 typedef struct 
 {
-	activeObject_t* ptr_OA_app;
-	activeObject_t* ptr_OA_C;
-	activeObject_t* ptr_OA_P;
-	activeObject_t* ptr_OA_S;
-    sf_t* handler_sf;                                      ///> Handler para la capa de separación de frame
+	activeObject_t 	OA_app;
+	activeObject_t 	OA_C;
+	activeObject_t 	OA_P;
+	activeObject_t 	OA_S;
+    sf_t* 			handler_sf;                                      ///> Handler para la capa de separación de frame
 } app_t;
 
 bool app_crear(app_t* handler_app , sf_t* handler_sf);

@@ -25,7 +25,7 @@ static uint8_t sf_decodificar_ascii(uint8_t byte);
 static void sf_bloque_de_memoria_liberar(sf_t* handler);
 static void sf_reiniciar_mensaje(sf_t* handler);
 static void sf_rx_isr(void* parametro);
-
+static void sf_tx_isr(void* parametro);
 static void timer_callback(TimerHandle_t xTimer);
 
 /**
@@ -89,17 +89,7 @@ bool sf_init(sf_t* handler, uartMap_t uart, uint32_t baudRate)
     // Habilito interrupciónes de UART
     uartInterrupt(handler->uart, UART_IE);
 
-    handler->timerTx = xTimerCreate(
-						"TimerTx",
-						TIMEOUT, //Timeout
-						pdTRUE,                 //AutoReload
-						handler,                //Estructura de datos que llega al callback
-						timer_callback
-						);
-    configASSERT(handler->timerTx != NULL);
-    BaseType_t res = xTimerStart( handler->timerTx, NULL );
-    configASSERT(res == pdPASS);
-    return true;
+	return true;
 }
 
 /**
@@ -281,8 +271,7 @@ bool sf_mensaje_recibir(sf_t* handler, tMensaje* ptr_mensaje)
 void sf_mensaje_procesado_enviar( sf_t* handler, tMensaje mensaje )
 {
 	objeto_post(handler->ptr_objeto2, mensaje);
-	uartCallbackSet(handler->uart, UART_TRANSMITER_FREE, sf_tx_isr, handler);
-	uartSetPendingInterrupt(handler->uart);
+	sf_setOn_tx_isr(handler);
 }
 
 /**
@@ -356,7 +345,7 @@ static void sf_rx_isr( void *parametro )
  * 
  * @param[in] parametro Puntero a la estructura de separación de frames. 
  */
-void sf_tx_isr( void *parametro )
+static void sf_tx_isr( void *parametro )
 {
 	sf_t* handler = (sf_t*) parametro;
 	static uint32_t indice_byte_enviado = 0;
@@ -424,10 +413,16 @@ static void timer_callback(TimerHandle_t xTimer)
     {
         sf_reiniciar_mensaje(handler);
     }
-    if (xTimer == handler->timerTx)
-	{
-    	uartCallbackSet(handler->uart, UART_TRANSMITER_FREE, sf_tx_isr, handler);
-		uartSetPendingInterrupt(handler->uart);
-	}
+}
+
+/**
+ * @brief Setea y dispara la interrupción de TX de la UART
+ * 
+ * @param handler Puntero a la estructura de separación de frames.
+ */
+void sf_setOn_tx_isr(sf_t* handler)
+{
+	uartCallbackSet( handler->uart, UART_TRANSMITER_FREE, sf_tx_isr, handler);
+    uartSetPendingInterrupt(handler->uart);
 }
 

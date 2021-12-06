@@ -32,8 +32,10 @@ void error_handler();
 
 /*==================[funcion principal]======================================*/
 
-app_t* ptr_app;
 sf_t* ptr_sf;
+//sf_t* ptr_sf2;
+//sf_t* ptr_sf3;
+app_t app;
 int main(void)
 {
 	/* Inicializar la placa */
@@ -45,10 +47,10 @@ int main(void)
     if (!sf_init(ptr_sf, UART_USED, BAUD_RATE))
 	    error_handler();
 
-	bool state = app_crear( ptr_app , ptr_sf);
+	bool state = app_crear( &app , ptr_sf);
 
-	// Gestion de errores
-    configASSERT( state );
+    // Gestion de errores
+	configASSERT( state );
 
     vTaskStartScheduler();
 
@@ -62,5 +64,5 @@ int main(void)
  */
 void error_handler()
 {
-
+	while(1);
 }

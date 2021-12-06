@@ -29,9 +29,6 @@ typedef struct
     QueueHandle_t 		responseQueue;
     callBackActObj_t 	callbackFunc;
     sf_t*               ptr_sf;
-    void*               ptr_OA_C;
-    void*               ptr_OA_P;
-    void*               ptr_OA_S;
     bool 				itIsAlive;
     bool                itIsImmortal;
 
@@ -42,7 +39,6 @@ bool activeObjectCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunc
 void activeObjectTask( void* pvParameters );
 
 void activeObjectEnqueue( activeObject_t* ao, void* value );
-void activeObjectEnqueueResponse( activeObject_t* ao, void* value );
 bool activeObjectOperationCreate( activeObject_t* ao, callBackActObj_t callback, TaskFunction_t taskForAO, QueueHandle_t response_queue );
 void activeObjectQueueChange( activeObject_t* ao, QueueHandle_t activeObjectNewQueue );
 

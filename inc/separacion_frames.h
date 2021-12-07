@@ -16,6 +16,7 @@
 #include "objeto.h"
 #include "qmpool.h"
 #include "timers.h"
+#include "sepa_frame_def.h"
 
 typedef struct
 {

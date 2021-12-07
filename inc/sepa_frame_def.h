@@ -31,7 +31,8 @@
 #define LEN_ID                  4
 #define LEN_SOM                 1
 #define LEN_HEADER              (LEN_CRC+LEN_EOM+LEN_ID+LEN_SOM)
-
+#define LEN_C                   1
+#define LEN_HEADER_COMPLETO     (LEN_HEADER + LEN_C)
 #define POS_CRC_H               2
 #define POS_CRC_L               3
 

@@ -36,8 +36,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
         if (app_validar_paquete( mensaje ) == false )                            // R_AO_3
         {
             app_insertar_mensaje_error( ERROR_INVALID_DATA , mensaje );
-            xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
-            sf_setOn_tx_isr(ptr_me->handler_sf);
+            sf_mensaje_procesado_enviar(ptr_me->handler_sf, *mensaje);
         }
         else switch( mensaje->ptr_datos[INDICE_CAMPO_C] ) // R_C3_12
     	{
@@ -49,8 +48,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
 				if( activeObjectOperationCreate( &ptr_me->OA_C , app_OAC, activeObjectTask, ptr_me->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje ); // R_AO_9
-                    xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
-                    sf_setOn_tx_isr(ptr_me->handler_sf);
+                    sf_mensaje_procesado_enviar(ptr_me->handler_sf, *mensaje);
                     break;
                 }
 			}
@@ -68,8 +66,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
                 if( activeObjectOperationCreate( &ptr_me->OA_P , app_OAP, activeObjectTask, ptr_me->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje ); // R_AO_9
-                    xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
-                    sf_setOn_tx_isr(ptr_me->handler_sf);
+                    sf_mensaje_procesado_enviar(ptr_me->handler_sf, *mensaje);
                     break;
                 }
             }
@@ -87,8 +84,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
                 if( activeObjectOperationCreate( &ptr_me->OA_S , app_OAS, activeObjectTask, ptr_me->handler_sf->ptr_objeto1->cola ) == false )
                 {
                     app_insertar_mensaje_error( ERROR_SYSTEM , mensaje ); // R_AO_9
-                    xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
-                    sf_setOn_tx_isr(ptr_me->handler_sf);
+                    sf_mensaje_procesado_enviar(ptr_me->handler_sf, *mensaje);
                     break;
                 }
             }
@@ -101,8 +97,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
             default:                                                // R_C3_6 - R_C3_11
             {
                 app_insertar_mensaje_error( ERROR_INVALID_OPCODE , mensaje );
-                xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
-                sf_setOn_tx_isr(ptr_me->handler_sf);
+                sf_mensaje_procesado_enviar(ptr_me->handler_sf, *mensaje);
             }
             
         }
@@ -110,8 +105,7 @@ void app_OAapp( void* caller_ao, void* mensaje_a_procesar )
     /* Verifico si el mensaje que llego es un evento con la respuesta procesada*/       //R_AO_2
     if ( mensaje->evento_tipo == RESPUESTA)
     {
-    	xQueueSend( ptr_me->handler_sf->ptr_objeto2->cola, mensaje, 0 );
-        sf_setOn_tx_isr(ptr_me->handler_sf);
+    	sf_mensaje_procesado_enviar(ptr_me->handler_sf, *mensaje);
     }
     
 }

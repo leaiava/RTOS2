@@ -26,6 +26,7 @@ static void sf_reiniciar_mensaje(sf_t* handler);
 static void sf_rx_isr(void* parametro);
 static void sf_tx_isr(void* parametro);
 static void timer_callback(TimerHandle_t xTimer);
+static void sf_setOn_tx_isr(sf_t* handler);
 
 /**
  * @brief Asigna memoria para una estructura de separcion de frames y devuelve puntero a ella.
@@ -419,7 +420,7 @@ static void timer_callback(TimerHandle_t xTimer)
  * 
  * @param handler Puntero a la estructura de separación de frames.
  */
-void sf_setOn_tx_isr(sf_t* handler)
+static void sf_setOn_tx_isr(sf_t* handler)
 {
 	uartCallbackSet( handler->uart, UART_TRANSMITER_FREE, sf_tx_isr, handler);
     uartSetPendingInterrupt(handler->uart);
